@@ -5,7 +5,7 @@ CFLAGS += -O1 -g
 ASFLAGS += -g
 
 # project files
-OBJS= $(STARTUP) blink.o
+OBJS= $(STARTUP) blink-and-button.o
 OBJS+= stm32f10x_gpio.o stm32f10x_rcc.o
 
 # include common make file
