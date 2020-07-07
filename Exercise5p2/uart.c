@@ -4,12 +4,13 @@
 #include <stm32f10x_usart.h>
 #include "uart.h"
 
-int uart_open(USART_TypeDef* USARTx, uint32_t baud, uint32_t flags)
+int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t flags as a param but theres no need?
 {
     /*
     -Initializes USART/GPIO clocks
     -Configure USART pins
     -Configure and enable the USART1 on STM32
+    -Returns a 1 if UART found, 0 if it fails to find UART specified
     */
 
     //instantiate and initialize the GPIO structure
@@ -67,7 +68,7 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud, uint32_t flags)
 
     else
     {
-        return(1);
+        return(0); //some value to communicate a fail i.e. 0 or FALSE
     }
     
     //Initialize and Enable USART
@@ -78,20 +79,27 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud, uint32_t flags)
     USART_Init(USARTx,&USART_InitStructure);
     USART_Cmd(USARTx,ENABLE);
 
-    return(0);
+    return(1); //TRUE
 }
 
 int uart_close(USART_TypeDef* USARTx)
 {
-    uart_close(USARTx);
+    USART_Cmd(USARTx,DISABLE); //I guess?
 }
 
 int uart_putc(int c, USART_TypeDef* USARTx)
 {
-
+    while(USART_GetFlagStatus(USARTx, USART_FLAG_TXE == RESET ))
+    {
+        USART1->DR = (c & 0xff);
+    }
+    return(0);
 }
 
 int uart_getc(USART_TypeDef* USARTx)
 {
-
+    while(USART_GetFlagStatus(USARTx, USART_FLAG_RXNE == RESET))
+    {
+        return USART1->DR & 0xff; 
+    }
 }

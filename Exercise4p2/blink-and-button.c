@@ -6,22 +6,27 @@ void Delay(uint32_t nTime);
 
 int main(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
     // Enable Peripheral Clocks
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC,ENABLE);
 
-    // Configure Pins
+    // Instantiate and initialize
+    GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_8;
-   
-    //for use with Blue Pill, built-in LED is 13
-    //GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+
+    //GPIO Pin 8
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+    //GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+    //for use with Blue Pill, built-in LED is 13
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_Init(GPIOC,&GPIO_InitStructure);
 
     //GPIO_Init((GPIO_TypeDef *)(GPIOA_BASE | GPIOC_BASE), &GPIO_InitStructure); // multiple at once?
-    GPIO_Init(GPIOA,&GPIO_InitStructure);
-    GPIO_Init(GPIOC,&GPIO_InitStructure);
 
     //Pushbutton Tracking
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;   
@@ -35,16 +40,20 @@ int main(void)
     }
     while (1) 
     {
-        if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0)== Bit_SET)
+        if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0) == Bit_SET)
         {
             //Turn LED on for Button Push
-            GPIO_WriteBit(GPIOC, GPIO_Pin_8, Bit_SET);
+            GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
+        }
+        else
+        {
+            GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
         }
         //toggle LED
         static int ledval = 0;
         //For use w/ Blue Pill, GPIO pin 13 is built-in LED
-        //GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_9, (ledval) ? Bit_SET : Bit_RESET);
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        //GPIO_WriteBit(GPIOC, GPIO_Pin_9, (ledval) ? Bit_SET : Bit_RESET);
         ledval = 1-ledval;
         Delay (250); // wait 250ms
     }

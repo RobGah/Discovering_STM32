@@ -5,31 +5,11 @@
 #include "uart.h"
 
 void Delay(uint32_t nTime);
+int uart_open(USART_TypeDef * USARTx, uint32_t baud);
 
 int main(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    // Enable Peripheral Clocks
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
-    // Configure Pins
-    GPIO_StructInit(&GPIO_InitStructure);
-    //GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    //for use with Blue Pill, built-in LED is 13
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-    //"replace GPIOC w/ 66 when initializing an debug w/ gdb"
-    //GPIO_Init(66, &GPIO_InitStructure);
-    /*Program received signal SIGTRAP, Trace/breakpoint trap.
-    GPIO_Init (GPIOx=0x20001fec, GPIO_InitStruct=0x40012000)
-    at ../Library/stm32f10x_gpio.c:179
-    179       assert_param(IS_GPIO_MODE(GPIO_InitStruct->GPIO_Mode));
-    (gdb) Continuing.
-
-    I got that by merely putting a breakpoint at main. 
-    */
+    uart_open(USART1, 9600);
 
 // Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
@@ -38,14 +18,16 @@ int main(void)
     }
     while (1) 
     {
-        //toggle LED
+        //toggle LED for sign of life while writing to USART1
         static int ledval = 0;
         //For use w/ Blue Pill, GPIO pin 13 is built-in LED
+        uart_putc('Hello World\n\r', USART1);
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
-        //GPIO_WriteBit(GPIOC, GPIO_Pin_9, (ledval) ? Bit_SET : Bit_RESET);
         ledval = 1-ledval;
         Delay (250); // wait 250ms
     }
+
+
 }
 // Timer code
 static __IO uint32_t TimingDelay;

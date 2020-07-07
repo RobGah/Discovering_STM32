@@ -1,0 +1,23 @@
+#ifndef UART_H
+#define URT_H
+
+int uart_open(USART_TypeDef* USARTx , uint32_t baud); 
+    /*
+    -Initializes USART/GPIO clocks
+    -Configure USART pins
+    -Configure and enable the USART1 on STM32
+    -Returns a 1 if UART found, 0 if it fails to find UART specified
+    */
+int uart_close(USART_TypeDef* USARTx);
+    /*
+    -Disable the USARTx on STM32
+    */
+int uart_putc(int c, USART_TypeDef* USARTx);
+    /*
+    -sends a character to USART (w/mask for lower 8 bits)
+    */
+int uart_getc(USART_TypeDef* USARTx);
+    /*
+    -returns USART data register's lower 8 bits
+    */
+#endif
