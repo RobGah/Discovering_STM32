@@ -16,6 +16,8 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
     //instantiate and initialize the GPIO structure
     GPIO_InitTypeDef GPIO_InitStruct;
     GPIO_StructInit(&GPIO_InitStruct);
+
+
     if(USARTx == USART1)
     {
         //Clock init
@@ -23,7 +25,7 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
 
         //USART1 TX init
         GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
-        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz; 
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
         GPIO_Init(GPIOA, &GPIO_InitStruct);
     
@@ -65,11 +67,6 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
         GPIO_Init(GPIOA,&GPIO_InitStruct);  
     }
-
-    else
-    {
-        return(0); //some value to communicate a fail i.e. 0 or FALSE
-    }
     
     //Initialize and Enable USART
     USART_InitTypeDef USART_InitStructure;
@@ -79,7 +76,7 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
     USART_Init(USARTx,&USART_InitStructure);
     USART_Cmd(USARTx,ENABLE);
 
-    return(1); //TRUE
+    return(0); //all good
 }
 
 int uart_close(USART_TypeDef* USARTx)
@@ -89,17 +86,13 @@ int uart_close(USART_TypeDef* USARTx)
 
 int uart_putc(int c, USART_TypeDef* USARTx)
 {
-    while(USART_GetFlagStatus(USARTx, USART_FLAG_TXE == RESET ))
-    {
-        USART1->DR = (c & 0xff);
-    }
+    while(USART_GetFlagStatus(USARTx, USART_FLAG_TXE) == RESET );
+    USARTx->DR = (c & 0xff); 
     return(0);
 }
 
 int uart_getc(USART_TypeDef* USARTx)
 {
-    while(USART_GetFlagStatus(USARTx, USART_FLAG_RXNE == RESET))
-    {
-        return USART1->DR & 0xff; 
-    }
+    while(USART_GetFlagStatus(USARTx, USART_FLAG_RXNE) == RESET);
+    return(USARTx->DR & 0xff); 
 }
