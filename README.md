@@ -1,20 +1,21 @@
-STM32-Template
+Discovering the STM32 Microcontroller - Worked Problems
 ==============
 
-A Build template for projects using the stm32vl discovery board, 
-CodeSourcery gnu toolchain, and the STM32F10x Standard Peripheral Library.
+A repo of worked examples from "Discovering the STM32 Microcontroller by Geoffery Brown
 
-To test:
+Main project folder contains makefile.common, the STM32 Standard Peripheral Library and necessary startup code, while subfolders contain the exercise source code that I've created and the resulting flashable .elf file.
 
-   (1) install the toolchain and libarary.
-   (2) change the TOOLROOT and LIBROOT paths in Makefile.common
-   (3) cd to Demo
-   (4) type make
+I'm using an STM32 "Blue Pill" w/ STM32f103c8t6 onboard. Author makes use of STM32VL Discovery Board. Any hardware peripherals required that are native to the STM32VL Discovery have been added externally to my setup (i.e. buttons and LEDs, STLink/V2 debugger). 
 
-To create new projects
+Minor edits to the author provided makefile and example code in the book (i.e. user LED is PC13 vs PA8) enable the use of the Blue Pill in lieu of the STM32VL discovery board. Highly recommended as I had quite a bit of trouble with setting up the STM32VL Discovery Board and its STLink v1 debugger with the open source STLink recommended by the author. 
 
-   (1) clone the Demo directory (name the directory appropriately)
-   (2) change TEMPLATEROOT in the cloned makefile to point to the 
-       template directory
-   (3) modify as needed, adding any needed library objects to the OBJ 
-       list in the Makefile
+To be explicit, change 
+
+PTYPE = STM32F10X_MD_VL
+to
+PTYPE = STM32F10X_MD
+
+in makefile.common in the author-provided code. Or just clone my repo!
+
+I might try working in this repo with an STM32L100 Discovery board as it hosts an STLink v2 debugger onboard and is quite similar. If I do, I'll report back. No garuntees!
+
