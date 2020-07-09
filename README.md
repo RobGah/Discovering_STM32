@@ -12,7 +12,9 @@ Minor edits to the author provided makefile and example code in the book (i.e. u
 To be explicit, change 
 
 PTYPE = STM32F10X_MD_VL
+
 to
+
 PTYPE = STM32F10X_MD
 
 in makefile.common in the author-provided code. Or just clone my repo!
