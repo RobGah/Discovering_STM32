@@ -8,12 +8,12 @@ void Delay(uint32_t nTime);
 //int uart_open(USART_TypeDef * USARTx, uint32_t baud);
 //int uart_putc(int c, USART_TypeDef* USARTx);
 
-char string_to_send[]  = "Hello World!\n\r";
 
 int main(void)
 {
     //Initialize UART
     uart_open(USART1, 9600);
+    int uart_char;
 
 // Get onboard LED initialized.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
@@ -30,21 +30,23 @@ int main(void)
     }
     while (1) 
     {
+        //echo uart input from host   
+        uart_char=uart_getc(USART1);
+        //Delay(100);
+        //uart_putc('\n',USART1);
+        uart_putc(uart_char, USART1);
+
         //toggle LED for sign of life while writing to USART1
         static int ledval = 0;
-        
         //For use w/ Blue Pill, GPIO pin 13 is built-in LED
-        for(int i = 0; i<strlen(string_to_send); ++i)
-        {
-        uart_putc(string_to_send[i], USART1);
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
         ledval = 1-ledval;
-            //uart_putc('a', USART1);
-            Delay (250); // wait 250ms
-        }
+
+        Delay (250); // wait 
     }
 return(0);
 }
+
 // Timer code
 static __IO uint32_t TimingDelay;
 
