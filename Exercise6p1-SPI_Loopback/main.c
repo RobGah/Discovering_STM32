@@ -8,7 +8,7 @@
 Setup:
 
 SPI lines are connected in loopback mode (MISO tied to MOSI)
-SS is arbitrarily PC3. 
+SS is arbitrarily PA8. 
 
 Ought to see the same data pattern on MOSI as MISO w/
 a logic analyzer. 
@@ -24,9 +24,9 @@ static int i, j;
 
 void csInit(void);
 
-void main()
+int main()
 {
-    csInit(); //PC3 CS initialization
+    csInit(); //PA8 CS initialization
     spiInit(SPI2);
 
     //fill and xmit txbuf with 0-32 in 4 byte steps
@@ -36,9 +36,9 @@ void main()
         {
             txbuf[j] = i*4 + j;
         }
-        GPIO_WriteBit(GPIOC, GPIO_Pin_3, 0); 
+        GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_RESET); 
         spiReadWrite(SPI2, rxbuf, txbuf, 4, SPI_SLOW);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_3, 1);
+        GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET);
         for(j = 0; j < 4; ++j)
         {   
             //if something fails in loopback mode
@@ -57,9 +57,9 @@ void main()
             //author shifts bits past the 8th bit just 
             //to prove we're in 16bit mode?
         }
-        GPIO_WriteBit(GPIOC,GPIO_Pin_3,0);
+        GPIO_WriteBit(GPIOB,GPIO_Pin_7,Bit_RESET);
         spiReadWrite16(SPI2 ,rxbuf16, txbuf16, 4, SPI_SLOW);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_3, 1);
+        GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET);
         for(j = 0; j < 4; ++j)
         {
             if(rxbuf16[j] != txbuf16[j])
@@ -69,7 +69,7 @@ void main()
         }
     }
 
-   
+   return(0);
 }
 
 // Timer code
@@ -85,16 +85,17 @@ void Delay(uint32_t nTime)
 void csInit(void)
 {
     //clock for GPIOC
-    RCC_AHBPeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
 
     //CS pin setup
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_StructInit(&GPIO_InitStructure);
     //pin specs
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC,&GPIO_InitStructure);
+    GPIO_Init(GPIOA,&GPIO_InitStructure);
+    GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET);
 }
 
 void SysTick_Handler(void)
