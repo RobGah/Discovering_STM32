@@ -67,6 +67,12 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
         GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
         GPIO_Init(GPIOA,&GPIO_InitStruct);  
     }
+
+    else
+    {
+        return;
+    }
+    
     
     //Initialize and Enable USART
     USART_InitTypeDef USART_InitStructure;
