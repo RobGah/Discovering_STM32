@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "8.1",
+            "cStandard": "c11",
+            "cppStandard": "gnu++14",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x",
+                "${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport",
+                "${workspaceFolder}/Library"
+            ]
+        }
+    ],
+    "version": 4
+}
