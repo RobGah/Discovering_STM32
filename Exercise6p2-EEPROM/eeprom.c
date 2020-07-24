@@ -121,7 +121,7 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
     */
 
     //initial variables
-    int bytes_left_in_page = PAGE_SIZE - (address % PAGE_SIZE); //bytes remaining in page given current address
+    int bytes_left_in_page = PAGE_SIZE - (address % PAGE_SIZE); //bytes remaining in page given initial address
     uint16_t current_address = address; //track addresss we're on
     uint16_t last_address_requested = current_address + cnt;
     uint16_t flipped_address = flip_address(current_address); //address to pass to 16 byte SPI call w/ LSByte in front
@@ -129,7 +129,7 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
 
     //get count of new pages needed based on size of cnt passed in
     int new_pages_needed = 0;
-    int byte_cnt, cnt_left_to_write = cnt; //one for determining pages needed, other for determing cnt to write to eeprom each write cycle
+    int byte_cnt_for_pages, cnt_left_to_write = cnt; //one for determining pages needed, other for determing cnt to write to eeprom each write cycle
     int initial_page_bytes = bytes_left_in_page; //bytes_left_in_page is useful, no need to alter it. 
 
     if(last_address_requested > LAST_ADDRESS)
@@ -137,13 +137,13 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
         return (-(last_address_requested - LAST_ADDRESS)); //returning a negative # means we overshot the last address on the call by that much
     }
     
-    if(byte_cnt > initial_page_bytes) //if there's more to write than what we can fit on the initial page
+    if(byte_cnt_for_pages > initial_page_bytes) //if there's more to write than what we can fit on the initial page
     {
-        while(byte_cnt > 0) //while we still have bytes to be page'd
+        while(byte_cnt_for_pages > 0) //while we still have bytes to be page'd
         {
             ++new_pages_needed; //increment new pages needed
-            byte_cnt = byte_cnt - bytes_left_in_page; //subtract bytes left in page from total bytes
-            bytes_left_in_page = PAGE_SIZE; //reset bytes_left_in_page to max bytes per page
+            byte_cnt_for_pages = byte_cnt_for_pages - initial_page_bytes; //subtract bytes left in page from total bytes
+            initial_page_bytes = PAGE_SIZE; //reset initial_page_bytes to max bytes per page
         }
     }
 
