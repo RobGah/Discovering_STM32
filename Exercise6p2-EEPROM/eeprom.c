@@ -69,6 +69,7 @@ void eepromWriteDisable()
     /*
     -Disables writing to eeprom
     */
+   
    uint8_t cmd = cmdWRDI;
 
    while (WIP(eepromReadStatus())); //while read status is 1&1 aka write is in progress
@@ -82,6 +83,7 @@ void eepromWriteStatus(uint8_t status)
 {
     // Writes 8 bit status to eeprom status register
     //status write is for BP1(bit 3) and BP0(bit 2) - Bits 7-4 and 1-0 are read only
+
     uint8_t cmd = cmdWRSR; // spi demands a ptr
 
    //cmd[0] = command byte and cmd[1] = status byte
@@ -99,15 +101,41 @@ void eepromWriteStatus(uint8_t status)
 
 int eepromRead(uint8_t *buf, uint8_t cnt, uint16_t address) 
 {
-    /* reads cnt bites data beginning at address */
+    /* 
+    reads cnt bytes data beginning at address
+    
+    What it does:
+    -memory wrap read if a read operation exceeds LAST_ADDRESS
+    -does not read if address requested is greater than LAST_ADDRESS
+    -a read w/ no wrap returns 0
+    -the user ought to know what the last memory address is anyway.       
+    */
 
     uint8_t cmd = cmdREAD;
+    uint16_t last_address_requested = address + cnt;
+    uint16_t flipped_address = flip_address(address);
+
+    if(address > LAST_ADDRESS)
+    {
+        return(-(address - LAST_ADDRESS)); //negative means we overshot the call by that much
+        //do not write to an out-of-bounds address
+    }
 
     GPIO_WriteBit(CS_PORT,CS_PIN, 0);
     spiReadWrite(SPI_USED, 0, &cmd, 1, SPI_SLOW); //send read cmd - wants a ptr hence the cmd
-    spiReadWrite16(SPI_USED, 0, &address, 1, SPI_SLOW); //send address to start read from
-    spiReadWrite(SPI_USED, buf, 0, cnt, SPI_SLOW); //read cnt times, store bytes at buf
+    spiReadWrite16(SPI_USED, 0, &flipped_address, 1, SPI_SLOW); //send address to start read from
+    spiReadWrite(SPI_USED, buf, 0, cnt, SPI_SLOW); //read cnt bytes, store bytes at buf
     GPIO_WriteBit(CS_PORT,CS_PIN, 1);
+
+    if(last_address_requested > LAST_ADDRESS)
+    {
+        return((last_address_requested - LAST_ADDRESS)); //positive integer indicates a wrap by that much
+    }
+    else
+    {
+        return(0); //read with 0 wrap
+    }
+    
 }
 
 int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
