@@ -24,4 +24,7 @@ int spiReadWrite16(SPI_TypeDef *SPIx, uint16_t *rbuf,
 Sends and recieves arrays that are cnt long of 16-bit words at a chosen speed 1, 2 or 3 
 (SPI_SLOW,SPI_MEDIUM,SPI_FAST)
 */ 
+
+void csInit(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin_x);
+
 #endif

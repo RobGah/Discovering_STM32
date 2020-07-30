@@ -2,72 +2,98 @@
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
+#include <stm32f10x_usart.h>
+#include "uart.h"
 #include "spi.h"
 #include "eeprom.h"
+#include <string.h>
 
 /*
 Setup:
 
-SPI lines are connected in loopback mode (MISO tied to MOSI)
-SS is arbitrarily PA8. 
+25LC160 is connected to the STM32 "Blue Pill" by way of:
 
-Ought to see the same data pattern on MOSI as MISO w/
-a logic analyzer. 
+EEPROM  BluePill    Function
+1       PB12        CS
+2       PB14        SlaveOut
+3       3V          WriteProtect
+4       GND         VSS
+5       PB15        SlaveIn
+6       PB13        Clock
+7       3V          HOLD
+8       3V          VCC
 
-Author has implemented an incrementing message for both 8 and
-16 bit SPI modes.
+To test read/write:
+-Write in "The STM32 Says Hello World!" into the EEPROM
+-Perform a read operation at the address written to
+-Send the read message over UART to confirm
+
+UART    BluePill    BluePill Pin 
+TXD     RXD         A9
+RXD     TXD         A10
+GND     GND         GND
+5V      5V          5V
+
 */
 
+#define USE_FULL_ASSERT
 
-static uint8_t txbuf[4], rxbuf[4];
-static uint16_t txbuf16[4], rxbuf16[4];
-static int i, j;
+uint8_t message[] = "The STM32 Says Hello World!\n";
+uint8_t recieved_from_memory[sizeof(message)];
 
-void csInit(void);
+uint16_t eeprom_address = 0x403; //1027, in the middle of memory. Falls in the middle of a page for testing
+
+void Delay(uint32_t nTime);
 
 int main()
 {
-    csInit(); // CS initialization
-    spiInit(SPI2);
+    
+    eepromInit(); //initializes SPI for us
 
-    //fill and xmit txbuf with 0-32 in 4 byte steps
-    for(i=0; i<8; ++i)
+    //eepromWrite((uint8_t*) &message, sizeof(message) - 1, eeprom_address); 
+    eepromWrite(message, sizeof(message)-1, eeprom_address);
+    
+    eepromRead(recieved_from_memory, sizeof(recieved_from_memory), eeprom_address);
+
+    uart_open(USART1,9600);
+    // Get onboard LED initialized.
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+    // Configure SysTick Timer
+    if(SysTick_Config(SystemCoreClock/1000))
     {
-        for(j = 0; j < 4; ++j)
-        {
-            txbuf[j] = i*4 + j;
-        }
-        GPIO_WriteBit(GPIOB, GPIO_Pin_12, 0); 
-        spiReadWrite(SPI2, rxbuf, txbuf, 4, SPI_SLOW);
-        GPIO_WriteBit(GPIOB, GPIO_Pin_12, 1);
-        for(j = 0; j < 4; ++j)
-        {   
-            //if something fails in loopback mode
-            if (rxbuf[j] != txbuf[j]) 
-            {
-                assert_failed(__FILE__, __LINE__);
-            }
-            
-        }
+        while(1);
     }
-    for (i = 0; i < 8; ++i);
+    while (1) 
     {
-        for(j = 0; j < 4; ++j)
+        //toggle LED for sign of life while writing to USART1
+        static int ledval = 0;
+        
+        //For use w/ Blue Pill, GPIO pin 13 is built-in LED
+
+        if(strcmp(message,recieved_from_memory) != 0)
         {
-            txbuf16[j] = i*4 + j + (i<<8); 
-            //author shifts bits past the 8th bit just 
-            //to prove we're in 16bit mode?
-        }
-        GPIO_WriteBit(GPIOB,GPIO_Pin_12,0);
-        spiReadWrite16(SPI2 ,rxbuf16, txbuf16, 4, SPI_SLOW);
-        GPIO_WriteBit(GPIOB, GPIO_Pin_12, 1);
-        for(j = 0; j < 4; ++j)
-        {
-            if(rxbuf16[j] != txbuf16[j])
+            char error[]  = "nope!\n";
+            for(int i = 0; i<strlen(error);++i)
             {
-                assert_failed(__FILE__, __LINE__);
+                uart_putc(error[i],USART1);
             }
         }
+
+        for(int i = 0; i<strlen(recieved_from_memory); ++i)
+        {
+        uart_putc(recieved_from_memory[i], USART1);
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        ledval = 1-ledval;
+            //uart_putc('a', USART1);
+            Delay (250); // wait 250ms
+        }
+        //uart_putc('/n',USART1); //newline
     }
 
    return(0);
@@ -80,28 +106,6 @@ void Delay(uint32_t nTime)
 {
     TimingDelay = nTime;
     while(TimingDelay !=0);
-}
-
-//CS pin init
-void csInit()
-{
-
-    //totally derailed by an incorrect call to the clock cmd (AHB vs APB)
-    //ended up looking at others repos - seems like a lot of people use B12 as CS
-    //almost any pin will do though
-
-    //clock for GPIOB
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
-
-    //CS pin setup
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_StructInit(&GPIO_InitStructure);
-    //pin specs
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOB,&GPIO_InitStructure);
-    GPIO_WriteBit(GPIOB, GPIO_Pin_12, 1);
 }
 
 void SysTick_Handler(void)

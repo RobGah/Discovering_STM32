@@ -30,8 +30,9 @@ void eepromInit()
     -initializes all GPIO and settings for SPI2 
     -initializes CS pin with CS init for chosen CS pin
     */
-    spiInit(SPI_USED);
     csInit(CS_PORT, CS_PIN);
+
+    spiInit(SPI_USED);
 }
 
 uint8_t eepromReadStatus()
@@ -41,11 +42,11 @@ uint8_t eepromReadStatus()
     */
 
    //cmd[0] = command byte and cmd[1] = empty byte while listening
-   uint8_t cmd[2] = {cmdREAD, 0xff}; 
+   uint8_t cmd[] = {cmdRDSR, 0xff}; 
    //res[0] is throwaway byte while writing command, res[1] byte has status
    uint8_t res[2]; 
    GPIO_WriteBit(CS_PORT, CS_PIN, 0); 
-   spiReadWrite(SPI_USED, res, &cmd, 2, SPI_SLOW);
+   spiReadWrite(SPI_USED, res, cmd, 2, SPI_SLOW);
    GPIO_WriteBit(CS_PORT, CS_PIN, 1);
    return res[1]; //return res element w/ status
 }
@@ -84,18 +85,18 @@ void eepromWriteStatus(uint8_t status)
     // Writes 8 bit status to eeprom status register
     //status write is for BP1(bit 3) and BP0(bit 2) - Bits 7-4 and 1-0 are read only
 
-    uint8_t cmd = cmdWRSR; // spi demands a ptr
+    //uint8_t cmd = cmdWRSR; // spi demands a ptr
 
-   //cmd[0] = command byte and cmd[1] = status byte
-   uint8_t cmd[2] = {cmdREAD, status};
-   //uint8_t res[2]; //throwaways from slave?
+    //cmd[0] = command byte and cmd[1] = status byte
+    uint8_t cmd[2] = {cmdWRSR, status};
+    //uint8_t res[2]; //throwaways from slave?
 
-   while (WIP(eepromReadStatus())); //wait until writing is done!
+    while (WIP(eepromReadStatus())); //wait until writing is done!
    
-   //unsure if I have to issue write enable to write status?
-   GPIO_WriteBit(CS_PORT, CS_PIN, 0); 
-   spiReadWrite(SPI_USED, 0, &cmd, 2, SPI_SLOW); //null pointer to rbuf seems to be ok?
-   GPIO_WriteBit(CS_PORT, CS_PIN, 1);
+    //unsure if I have to issue write enable to write status?
+    GPIO_WriteBit(CS_PORT, CS_PIN, 0); 
+    spiReadWrite(SPI_USED, 0, cmd, 2, SPI_SLOW); //null pointer to rbuf seems to be ok?
+    GPIO_WriteBit(CS_PORT, CS_PIN, 1);
    
 }
 
@@ -120,6 +121,8 @@ int eepromRead(uint8_t *buf, uint8_t cnt, uint16_t address)
         return(-(address - LAST_ADDRESS)); //negative means we overshot the call by that much
         //do not write to an out-of-bounds address
     }
+
+    while (WIP(eepromReadStatus())); //wait until writing is done!
 
     GPIO_WriteBit(CS_PORT,CS_PIN, 0);
     spiReadWrite(SPI_USED, 0, &cmd, 1, SPI_SLOW); //send read cmd - wants a ptr hence the cmd
@@ -201,12 +204,13 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
     cnt_left_to_write = cnt_left_to_write - bytes_left_in_page;
 
     //loop to create pages
-    for (new_pages_needed; new_pages_needed>0; new_pages_needed--)
+    for(new_pages_needed; new_pages_needed>0; new_pages_needed--)
     {    
-        while(WIP(eepromReadStatus())); // do nothing while a write is going on.
         
         if(cnt_left_to_write > MAX_WRITE_BYTES)
         {
+            while(WIP(eepromReadStatus())); // do nothing while a write is going on.
+
             eepromWriteEnable(); 
             GPIO_WriteBit(CS_PORT, CS_PIN, 0);
             spiReadWrite(SPI_USED, 0, &cmd, 1, SPI_SLOW);
@@ -221,6 +225,8 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
         }
         else
         {
+            while (WIP(eepromReadStatus())); //wait until writing is done!
+
             eepromWriteEnable(); 
             GPIO_WriteBit(CS_PORT, CS_PIN, 0);
             spiReadWrite(SPI_USED, 0, &cmd, 1, SPI_SLOW);
@@ -237,7 +243,7 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address)
    return(current_address); //a positive number
 }
 
-uint16_t flip_address(uint16_t address)
+uint16_t flip_address(uint16_t val)
 {
     /* 
     SPI sends in LSByte first for 16 bit mode
@@ -246,6 +252,6 @@ uint16_t flip_address(uint16_t address)
     Cute trick I found online
     */
 
-    return((address>>8) | (address<<8));
+    return((val>>8) | (val<<8));
 }
 

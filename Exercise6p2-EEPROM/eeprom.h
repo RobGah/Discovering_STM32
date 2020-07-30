@@ -15,7 +15,7 @@ int eepromWrite(uint8_t *buf, uint8_t cnt, uint16_t address);
 
 int eepromRead(uint8_t *buf, uint8_t cnt, uint16_t address);
 
-
+uint16_t flip_address(uint16_t val);
 
 
 #endif
