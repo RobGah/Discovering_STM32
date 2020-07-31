@@ -38,10 +38,10 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
-uint8_t message[] = "The STM32 Says Hello World!\n";
-uint8_t recieved_from_memory[sizeof(message)];
+uint8_t message[] = "Hello World! Nice day isn't it?\n";
+uint8_t recieved_from_memory[sizeof(message)-1];
 
-uint16_t eeprom_address = 0x403; //1027, in the middle of memory. Falls in the middle of a page for testing
+uint16_t eeprom_address = 0x403;
 
 void Delay(uint32_t nTime);
 
@@ -50,8 +50,7 @@ int main()
     
     eepromInit(); //initializes SPI for us
 
-    //eepromWrite((uint8_t*) &message, sizeof(message) - 1, eeprom_address); 
-    eepromWrite(message, sizeof(message)-1, eeprom_address);
+    eepromWrite(&message, sizeof(message)-1, eeprom_address); 
     
     eepromRead(recieved_from_memory, sizeof(recieved_from_memory), eeprom_address);
 
@@ -85,7 +84,7 @@ int main()
             }
         }
 
-        for(int i = 0; i<strlen(recieved_from_memory); ++i)
+        for(int i = 0; i<sizeof(recieved_from_memory); ++i)
         {
         uart_putc(recieved_from_memory[i], USART1);
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
