@@ -8,6 +8,13 @@ enum spiSpeed
     SPI_FAST
 };
 
+static const uint16_t speeds[] =
+{
+    [SPI_SLOW] = SPI_BaudRatePrescaler_64,
+    [SPI_MEDIUM] =  SPI_BaudRatePrescaler_8,
+    [SPI_FAST] = SPI_BaudRatePrescaler_2
+};
+
 void spiInit(SPI_TypeDef *SPIx);
 //Initializes SPI comms when given SPI device
 

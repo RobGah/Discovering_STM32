@@ -5,24 +5,6 @@
 #include "spi.h"
 #include "eeprom.h"
 
-#define CS_PIN               GPIO_Pin_12
-#define CS_PORT              GPIOB
-#define SPI_USED             SPI2      
-#define WIP(x)               ((x)&1)  
-#define PAGE_SIZE            16
-#define LAST_ADDRESS         0x07FF
-#define MAX_WRITE_BYTES      16
-
-
-enum eepromCMD
-{
-    cmdREAD = 0x03, 
-    cmdWRITE = 0x02,
-    cmdWREN = 0x06,
-    cmdWRDI = 0x04,
-    cmdRDSR = 0x05,
-    cmdWRSR = 0x01
-};
 
 void eepromInit()
 {
