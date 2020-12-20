@@ -5,28 +5,29 @@
 #include <stm32f10x_usart.h>
 #include "uart.h"
 #include "spi.h"
-#include "eeprom.h"
+#include "LCD7735R.h"
 #include <string.h>
 
 /*
 Setup:
 
-25LC160 is connected to the STM32 "Blue Pill" by way of:
+ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
 
-EEPROM  BluePill    Function
-1       PB12        CS
-2       PB14        SlaveOut
-3       3V          WriteProtect
-4       GND         VSS
-5       PB15        SlaveIn
-6       PB13        Clock
-7       3V          HOLD
-8       3V          VCC
+LCD     BluePill    Function
+VCC     5V          Power
+BKL     PA1         Backlight Control
+RESET   PC1         LCD Reset
+RS      PC2         Data/Control Toggle
+MISO    PB14        SlaveOut
+MOSI    PB15        SlaveIn
+SCLK    PB13        Clock for SPI2
+LCD CS  PC0         LCD Select 
+SD_CS   PC6         SD card Select
+GND     GND         Ground
 
-To test read/write:
--Write in "The STM32 Says Hello World!" into the EEPROM
--Perform a read operation at the address written to
--Send the read message over UART to confirm
+To test LCD:
+-Cycle thru primary colors (R,G,B) w/ delay
+-Send corresponding message over UART ("LCD Color is 0x....")
 
 UART    BluePill    BluePill Pin 
 TXD     RXD         A9
@@ -48,7 +49,7 @@ void Delay(uint32_t nTime);
 int main()
 {
     
-    eepromInit(); //initializes SPI for us
+    ST7735_init(); //initializes SPI for us
 
     eepromWrite(&message, sizeof(message)-1, eeprom_address); 
     
