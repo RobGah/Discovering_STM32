@@ -104,6 +104,13 @@ static void ST7735_writeCmd(uint8_t c)
     LcdWrite(LCD_C, &c, 1);
 }
 
+void ST7735_backLight(uint8_t on)
+{
+if (on)
+GPIO_WriteBit(LCD_PORT_BKL ,GPIO_PIN_BKL , LOW);
+else
+GPIO_WriteBit(LCD_PORT_BKL ,GPIO_PIN_BKL , HIGH);
+
 void ST7735_init()
 {
     GPIO_InitTypeDef GPIO_InitStructure;

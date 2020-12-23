@@ -39,23 +39,14 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
-uint8_t message[] = "Hello World! Nice day isn't it?\n";
-uint8_t recieved_from_memory[sizeof(message)-1];
-
-uint16_t eeprom_address = 0x403;
-
 void Delay(uint32_t nTime);
 
 int main()
 {
     
     ST7735_init(); //initializes SPI for us
+    ST7735_backlight(1);
 
-    eepromWrite(&message, sizeof(message)-1, eeprom_address); 
-    
-    eepromRead(recieved_from_memory, sizeof(recieved_from_memory), eeprom_address);
-
-    uart_open(USART1,9600);
     // Get onboard LED initialized.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -69,31 +60,21 @@ int main()
     {
         while(1);
     }
+
+    //MAIN LOOP
     while (1) 
     {
-        //toggle LED for sign of life while writing to USART1
+        //toggle LED for sign of life while flipping through screen colors
         static int ledval = 0;
-        
-        //For use w/ Blue Pill, GPIO pin 13 is built-in LED
-
-        if(strcmp(message,recieved_from_memory) != 0)
-        {
-            char error[]  = "nope!\n";
-            for(int i = 0; i<strlen(error);++i)
-            {
-                uart_putc(error[i],USART1);
-            }
-        }
-
-        for(int i = 0; i<sizeof(recieved_from_memory); ++i)
-        {
-        uart_putc(recieved_from_memory[i], USART1);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        ST7735_fillScreen(RED);
+        Delay(1000);
         ledval = 1-ledval;
-            //uart_putc('a', USART1);
-            Delay (250); // wait 250ms
-        }
-        //uart_putc('/n',USART1); //newline
+        ST7735_fillScreen(BLUE);
+        Delay(1000);
+        ledval = 1-ledval;
+        ST7735_fillScreen(GREEN);
+        Delay(1000);
+        ledval = 1-ledval;
     }
 
    return(0);
