@@ -8,7 +8,7 @@ ASFLAGS = -g
 # object files
 
 OBJS=  $(STARTUP) main.o
-OBJS += spi.o uart.o LCD7735R.o stm32f10x_spi.o stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o
+OBJS += spi.o uart.o stm32f10x_spi.o stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o LCD7735R.o
 
 # include common make file
 

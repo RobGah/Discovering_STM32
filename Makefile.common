@@ -4,11 +4,11 @@ ELF=$(notdir $(CURDIR)).elf
 
 # Tool path
 
-TOOLROOT="C:\Users\Robert\Documents\GNU_ARM_TOOLS\9-2020-q2-update\bin"
+TOOLROOT="C:\Users\Robert\OneDrive\Documents\GNU_ARM_TOOLS\9-2020-q2-update\bin"
 
 # Library path
 
-LIBROOT="C:\Users\Robert\Documents\DiscoveringSTM32\STM32F10x_StdPeriph_Lib_V3.5.0"
+LIBROOT="C:\Users\Robert\OneDrive\Documents\DiscoveringSTM32\STM32F10x_StdPeriph_Lib_V3.5.0"
 
 # Tools
 

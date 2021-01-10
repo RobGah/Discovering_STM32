@@ -1,9 +1,10 @@
-#include "LCD7735R.h"
 #include <stm32f10x.h>
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
+#include <stm32f10x_usart.h>
 #include "spi.h"
+#include "LCD7735R.h"
 
 //GPIOC
 #define LCD_PORT GPIOC
@@ -34,8 +35,7 @@
 #define MADVAL(x) (((x) << 5) | 8)
 static uint8_t madctlcurrent = MADVAL(MADCTLGRAPHICS);
 
-void ST7735_setAddrWindow(uint16_t x0, uint16_t y0,
-                          uint16_t x1, uint16_t y1, uint8_t madctl)
+void ST7735_setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_t madctl)
 {
     madctl = MADVAL(madctl);
     if (madctl != madctlcurrent)
@@ -58,7 +58,7 @@ void ST7735_pushColor(uint16_t *color, int cnt)
     LcdWrite16(LCD_D, color, cnt);
 }
 
-void ST7735_backLight(uint8_t on)
+void ST7735_backlight(uint8_t on)
 {
     if (on)
         GPIO_WriteBit(LCD_PORT_BKL, GPIO_PIN_BKL, LOW);
@@ -99,62 +99,12 @@ void LcdWrite16(char dc, const char *data, int cnt)
     GPIO_SetBits(LCD_PORT, GPIO_PIN_SCE);
 }
 
-static void ST7735_writeCmd(uint8_t c)
+void ST7735_writeCmd(uint8_t c)
 {
     LcdWrite(LCD_C, &c, 1);
 }
 
-void ST7735_backLight(uint8_t on)
-{
-if (on)
-GPIO_WriteBit(LCD_PORT_BKL ,GPIO_PIN_BKL , LOW);
-else
-GPIO_WriteBit(LCD_PORT_BKL ,GPIO_PIN_BKL , HIGH);
-
-void ST7735_init()
-{
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    spiInit(SPILCD); //setup LCD SPI
-
-    // set up pins
-    //Enable GPIO A and C clocks
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE);
-
-    //GPIOA
-    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_BKL;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    
-    //GPIOC
-    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_DC | GPIO_PIN_RST | GPIO_PIN_SCE | GPIO_PIN_SD_CS;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    // set cs , reset low
-    GPIO_WriteBit(LCD_PORT, GPIO_PIN_SCE, HIGH);
-    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, HIGH);
-    Delay(10);
-    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, LOW);
-    Delay(10);
-    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, HIGH);
-    Delay(10);
-
-    // Send initialization commands to ST7735
-    const struct ST7735_cmdBuf *cmd;
-    for (cmd = initializers; cmd->command; cmd++)
-    {
-        LcdWrite(LCD_C, &(cmd->command), 1);
-        if (cmd->len)
-            LcdWrite(LCD_D, cmd->data, cmd->len);
-        if (cmd->delay)
-            Delay(cmd->delay);
-    }
-}
-
-struct ST7735_cmdBuf
+const struct ST7735_cmdBuf
 {
     uint8_t command;  // ST7735 command byte
     uint8_t delay;    // ms delay after
@@ -162,7 +112,7 @@ struct ST7735_cmdBuf
     uint8_t data[16]; // parameter data
 };
 
-static const struct ST7735_cmdBuf initializers[] = //total copy-paste from the book, as the author advises!
+struct ST7735_cmdBuf initializers[] = //total copy-paste from the book, as the author advises!
 {
     // SWRESET Software reset
     {0x01, 150, 0, 0},
@@ -208,3 +158,47 @@ static const struct ST7735_cmdBuf initializers[] = //total copy-paste from the b
     // End
     {0, 0, 0, 0}
 };
+
+void ST7735_init()
+{
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    spiInit(SPILCD); //setup LCD SPI
+
+    // set up pins
+    //Enable GPIO A and C clocks
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE);
+
+    //GPIOA
+    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_BKL;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+    //GPIOC
+    GPIO_InitStructure.GPIO_Pin = GPIO_PIN_DC | GPIO_PIN_RST | GPIO_PIN_SCE | GPIO_PIN_SD_CS;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    // set cs , reset low
+    GPIO_WriteBit(LCD_PORT, GPIO_PIN_SCE, HIGH);
+    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, HIGH);
+    Delay(10);
+    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, LOW);
+    Delay(10);
+    GPIO_WriteBit(LCD_PORT, GPIO_PIN_RST, HIGH);
+    Delay(10);
+
+    // Send initialization commands to ST7735
+    const struct ST7735_cmdBuf *cmd;
+    for (cmd = initializers; cmd->command; cmd++)
+    {
+        LcdWrite(LCD_C, &(cmd->command), 1);
+        if (cmd->len)
+            LcdWrite(LCD_D, cmd->data, cmd->len);
+        if (cmd->delay)
+            Delay(cmd->delay);
+    }
+}
+

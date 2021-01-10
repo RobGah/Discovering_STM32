@@ -3,10 +3,12 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
 #include <stm32f10x_usart.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "uart.h"
 #include "spi.h"
 #include "LCD7735R.h"
-#include <string.h>
 
 /*
 Setup:
@@ -43,10 +45,9 @@ void Delay(uint32_t nTime);
 
 int main()
 {
-    
-    ST7735_init(); //initializes SPI for us
     ST7735_backlight(1);
-
+    ST7735_init(); //initializes SPI for us
+        
     // Get onboard LED initialized.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure;
