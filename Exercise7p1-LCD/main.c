@@ -48,8 +48,7 @@ int main()
       //uart port opened for debugging
     uart_open(USART1,9600);
     uart_putstring("UART is Live.",USART1);
-
-    ST7735_init(); //stuck here
+    ST7735_init(); //stuck here?
     uart_putstring("ST7735 Initialized.",USART1);
     ST7735_backlight(1);
     uart_putstring("LCD Backlight ON.",USART1);
@@ -71,23 +70,18 @@ int main()
     //MAIN LOOP
     while (1) 
     {
-        //toggle LED for sign of life while flipping through screen colors
-        static int ledval = 0;
         uart_putstring("Turning Screen Red...",USART1);
         ST7735_fillScreen(RED);
         uart_putstring("Success!",USART1);
         Delay(1000);
-        ledval = 1-ledval;
         uart_putstring("Turning Screen Blue...",USART1);
         ST7735_fillScreen(BLUE);
         uart_putstring("Success!",USART1);
         Delay(1000);
-        ledval = 1-ledval;
         uart_putstring("Turning Screen Green...",USART1);
         ST7735_fillScreen(GREEN);
         uart_putstring("Success!",USART1);   
         Delay(1000);
-        ledval = 1-ledval;
     }
 
    return(0);
