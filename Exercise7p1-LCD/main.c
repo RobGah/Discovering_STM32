@@ -18,13 +18,13 @@ ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
 LCD     BluePill    Function
 VCC     5V          Power
 BKL     PA1         Backlight Control
-RESET   PC1         LCD Reset
-RS      PC2         Data/Control Toggle
+RESET   PB3         LCD Reset
+RS      PB4         Data/Control Toggle
 MISO    PB14        SlaveOut
 MOSI    PB15        SlaveIn
 SCLK    PB13        Clock for SPI2
-LCD CS  PC0         LCD Select 
-SD_CS   PC6         SD card Select
+LCD CS  PB5         LCD Select 
+SD_CS   PB6    res     SD card Select
 GND     GND         Ground
 
 To test LCD:
@@ -45,9 +45,15 @@ void Delay(uint32_t nTime);
 
 int main()
 {
+      //uart port opened for debugging
+    uart_open(USART1,9600);
+    uart_putstring("UART is Live.",USART1);
+
+    ST7735_init(); //stuck here
+    uart_putstring("ST7735 Initialized.",USART1);
     ST7735_backlight(1);
-    ST7735_init(); //initializes SPI for us
-        
+    uart_putstring("LCD Backlight ON.",USART1);
+
     // Get onboard LED initialized.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -67,13 +73,19 @@ int main()
     {
         //toggle LED for sign of life while flipping through screen colors
         static int ledval = 0;
+        uart_putstring("Turning Screen Red...",USART1);
         ST7735_fillScreen(RED);
+        uart_putstring("Success!",USART1);
         Delay(1000);
         ledval = 1-ledval;
+        uart_putstring("Turning Screen Blue...",USART1);
         ST7735_fillScreen(BLUE);
+        uart_putstring("Success!",USART1);
         Delay(1000);
         ledval = 1-ledval;
+        uart_putstring("Turning Screen Green...",USART1);
         ST7735_fillScreen(GREEN);
+        uart_putstring("Success!",USART1);   
         Delay(1000);
         ledval = 1-ledval;
     }

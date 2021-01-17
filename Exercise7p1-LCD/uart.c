@@ -102,3 +102,14 @@ int uart_getc(USART_TypeDef* USARTx)
     while(USART_GetFlagStatus(USARTx, USART_FLAG_RXNE) == RESET);
     return(USARTx->DR & 0xff); 
 }
+
+int uart_putstring(char *array,USART_TypeDef* USARTx)
+{
+    for(int i = 0; i<strlen(array);++i)
+        {
+            uart_putc(array[i],USARTx);
+        }
+    
+    uart_putc('\n',USARTx); //auto newline after string 
+    return(0);
+}

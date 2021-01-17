@@ -7,10 +7,10 @@
 #include "LCD7735R.h"
 
 //GPIOC
-#define LCD_PORT GPIOC
-#define GPIO_PIN_DC GPIO_Pin_2
-#define GPIO_PIN_SCE GPIO_Pin_0
-#define GPIO_PIN_RST GPIO_Pin_1
+#define LCD_PORT GPIOB
+#define GPIO_PIN_DC GPIO_Pin_4
+#define GPIO_PIN_SCE GPIO_Pin_5
+#define GPIO_PIN_RST GPIO_Pin_3
 #define GPIO_PIN_SD_CS GPIO_Pin_6
 
 //SPI
@@ -61,9 +61,9 @@ void ST7735_pushColor(uint16_t *color, int cnt)
 void ST7735_backlight(uint8_t on)
 {
     if (on)
-        GPIO_WriteBit(LCD_PORT_BKL, GPIO_PIN_BKL, LOW);
-    else
         GPIO_WriteBit(LCD_PORT_BKL, GPIO_PIN_BKL, HIGH);
+    else
+        GPIO_WriteBit(LCD_PORT_BKL, GPIO_PIN_BKL, LOW);
 }
 
 void ST7735_fillScreen(uint16_t color)
@@ -166,8 +166,8 @@ void ST7735_init()
     spiInit(SPILCD); //setup LCD SPI
 
     // set up pins
-    //Enable GPIO A and C clocks
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC, ENABLE);
+    //Enable GPIO A and B clocks
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB, ENABLE);
 
     //GPIOA
     GPIO_InitStructure.GPIO_Pin = GPIO_PIN_BKL;
@@ -175,11 +175,11 @@ void ST7735_init()
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    //GPIOC
+    //GPIOB
     GPIO_InitStructure.GPIO_Pin = GPIO_PIN_DC | GPIO_PIN_RST | GPIO_PIN_SCE | GPIO_PIN_SD_CS;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     // set cs , reset low
     GPIO_WriteBit(LCD_PORT, GPIO_PIN_SCE, HIGH);
