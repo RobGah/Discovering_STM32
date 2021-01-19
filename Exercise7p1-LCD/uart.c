@@ -2,6 +2,7 @@
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
+#include <string.h>
 #include "uart.h"
 
 int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t flags as a param but theres no need?
@@ -70,7 +71,7 @@ int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t fla
 
     else
     {
-        return;
+        return -1;
     }
     
     
@@ -103,7 +104,7 @@ int uart_getc(USART_TypeDef* USARTx)
     return(USARTx->DR & 0xff); 
 }
 
-int uart_putstring(char *array,USART_TypeDef* USARTx)
+int uart_puts(char *array,USART_TypeDef* USARTx)
 {
     for(int i = 0; i<strlen(array);++i)
         {

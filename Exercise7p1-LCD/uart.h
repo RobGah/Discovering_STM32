@@ -21,7 +21,7 @@ int uart_getc(USART_TypeDef* USARTx);
     -returns USART data register's lower 8 bits
     */
 
-int uart_putstring(char *array,USART_TypeDef* USARTx);
+int uart_puts(char *array,USART_TypeDef* USARTx);
 /*
 -uses uart_putc w/ a loop to print an array to UART
 -returns 0 if successful like uart_putc

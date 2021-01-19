@@ -18,10 +18,14 @@
 #define YELLOW           0xFFE0
 #define WHITE            0xFFFF
 
+//screen stuff
 void ST7735_setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_t madctl);
 void ST7735_pushColor(uint16_t *color, int cnt);
 void ST7735_init();
 void ST7735_backlight(uint8_t on);
 void ST7735_fillScreen(uint16_t color);
 
+//timer stuff
+void Delay(uint32_t nTime);
+void SysTick_Handler(void);
 #endif

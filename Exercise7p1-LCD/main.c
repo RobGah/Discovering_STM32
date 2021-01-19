@@ -11,6 +11,9 @@
 #include "LCD7735R.h"
 
 /*
+
+***Last Updated 1/19/21***
+
 Setup:
 
 ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
@@ -18,18 +21,20 @@ ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
 LCD     BluePill    Function
 VCC     5V          Power
 BKL     PA1         Backlight Control
-RESET   PB3         LCD Reset
-RS      PB4         Data/Control Toggle
+RESET   PA3         LCD Reset
+RS      PA4         Data/Control Toggle
 MISO    PB14        SlaveOut
 MOSI    PB15        SlaveIn
 SCLK    PB13        Clock for SPI2
-LCD CS  PB5         LCD Select 
-SD_CS   PB6    res     SD card Select
+LCD CS  PA5         LCD Select 
+SD_CS   PA6         SD card Select
 GND     GND         Ground
 
 To test LCD:
--Cycle thru primary colors (R,G,B) w/ delay
--Send corresponding message over UART ("LCD Color is 0x....")
+-Cycle thru primary colors (R,G,B) w/ delay - WORKS
+-Send corresponding message over UART (e.g. "LCD Color is 0x....") - WORKS
+
+Additionally, grab my uart_puts function from uart.c if you like uart debug outputs. I'm using:
 
 UART    BluePill    BluePill Pin 
 TXD     RXD         A9
@@ -40,68 +45,65 @@ GND     GND         GND
 */
 
 #define USE_FULL_ASSERT
+#define LED_PORT  GPIOC
+#define LED_PIN  GPIO_Pin_13
 
-void Delay(uint32_t nTime);
 
 int main()
 {
       //uart port opened for debugging
     uart_open(USART1,9600);
-    uart_putstring("UART is Live.",USART1);
+    uart_puts("UART is Live.",USART1);
     ST7735_init(); //stuck here?
-    uart_putstring("ST7735 Initialized.",USART1);
+    uart_puts("ST7735 Initialized.",USART1);
     ST7735_backlight(1);
-    uart_putstring("LCD Backlight ON.",USART1);
+    uart_puts("LCD Backlight ON.",USART1);
 
     // Get onboard LED initialized.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+    GPIO_InitStructure.GPIO_Pin = LED_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    GPIO_Init(LED_PORT, &GPIO_InitStructure);
+    GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
 
     // Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
     {
         while(1);
     }
+    
+    static uint8_t ledval = 0; //LED blinking is just reassuring / sign of life 
 
     //MAIN LOOP
     while (1) 
     {
-        uart_putstring("Turning Screen Red...",USART1);
+        uart_puts("Turning Screen Red...",USART1);
+        ledval = 1-ledval;
         ST7735_fillScreen(RED);
-        uart_putstring("Success!",USART1);
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        uart_puts("Success!",USART1);
         Delay(1000);
-        uart_putstring("Turning Screen Blue...",USART1);
+        
+        ledval = 1-ledval;
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        uart_puts("Turning Screen Blue...",USART1);
         ST7735_fillScreen(BLUE);
-        uart_putstring("Success!",USART1);
+        uart_puts("Success!",USART1);
         Delay(1000);
-        uart_putstring("Turning Screen Green...",USART1);
+        
+        ledval = 1-ledval;
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+        uart_puts("Turning Screen Green...",USART1);
         ST7735_fillScreen(GREEN);
-        uart_putstring("Success!",USART1);   
+        uart_puts("Success!",USART1);   
         Delay(1000);
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
+
     }
 
    return(0);
-}
-
-// Timer code
-static __IO uint32_t TimingDelay;
-
-void Delay(uint32_t nTime)
-{
-    TimingDelay = nTime;
-    while(TimingDelay !=0);
-}
-
-void SysTick_Handler(void)
-{
-    if (TimingDelay != 0x00)
-    {
-        TimingDelay--;
-    }
 }
 
 #ifdef USE_FULL_ASSERT
