@@ -4,6 +4,7 @@
 #include <stm32f10x_spi.h>
 #include "spi.h"
 #include "LCD7735R.h"
+#include "glcdfont.h"
 
 /*
 
@@ -264,4 +265,49 @@ void ST7735_fillScreen(uint16_t color)
             ST7735_pushColor(&color, 1);
         }
     }
+}
+
+void ST7735_writeChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
+	uint16_t startx, uint16_t starty)
+{
+	/*inputs: 
+	letter: e.g. 'A'
+	lettercolor - ad oculos
+	bgcolor - background color
+	startx, starty - starting pos. of letter
+	*/
+	
+	//Step 1: determine where we are in the font array
+	uint16_t location_in_font_array = 5*letter; //converts to a number and 5x to get pos. in font array
+	
+	//set our window - start x,y + room as described in the book
+	//each character is placed in a 6x10 rectangle leaving
+	//space between lines (3 pixels) and characters (1 pixel)
+	ST7735_setAddrWindow(startx, starty, startx+5, starty+9, MADCTLGRAPHICS);
+	//0-5 is 6 pixels, 0-9 is 10 pixels, right?
+
+	//for all 5 bytes that compose the letter
+	for(int i=0; i<5; i++) //each count is another defining of a "column" by the 8bit hex value
+	{
+		//get the hex value in font 
+		uint8_t font_hex = font[location_in_font_array +i];
+		
+		//for each bit in the hex value byte
+		for(int j=0; j<8; j++)
+		{
+			if(font_hex & 1) //if the last bit is a 1
+			{
+				ST7735_pushColor(&lettercolor,1); //its part of the letter
+			}
+			else
+			{
+				ST7735_pushColor(&bgcolor,1); //otherwise, its background.
+			}
+
+			font_hex = font_hex >> 1; //right shift out the used bit
+		}
+
+		ST7735_pushColor(&bgcolor,8); //write background to the 5th column
+	}
+
 }

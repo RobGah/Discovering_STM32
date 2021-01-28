@@ -9,10 +9,13 @@ Saving as a header file instead of a source as there's not much here to justify 
 #ifndef FONT_H
 #define FONT_H
 
+//#include <stdint.h>
 
 // Standard ASCII 5x7 font
 
-static const unsigned char font[] = {
+//was declared static by adafruit in the .c, dunno why
+//static in a .h feels wrong for this.
+const unsigned char font[] = { 
     0x00, 0x00, 0x00, 0x00, 0x00, 
     0x3E, 0x5B, 0x4F, 0x5B, 0x3E, //1
     0x3E, 0x6B, 0x4F, 0x6B, 0x3E, //2

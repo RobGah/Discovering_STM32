@@ -5,6 +5,7 @@
 #include <stm32f10x_usart.h>
 #include <stdint.h>
 #include <string.h>
+//#include <stdio.h> //ehhhh
 
 #include "uart.h"
 #include "spi.h"
@@ -12,7 +13,7 @@
 
 /*
 
-***Last Updated 1/19/21***
+***Last Updated 1/27/21***
 
 Setup:
 
@@ -31,8 +32,8 @@ SD_CS   PA6         SD card Select
 GND     GND         Ground
 
 To test LCD:
--Cycle thru primary colors (R,G,B) w/ delay - WORKS
--Send corresponding message over UART (e.g. "LCD Color is 0x....") - WORKS
+-Cycle thru alphabet on screen to test letters
+-Send corresponding message over UART (e.g. "Successfully wrote %c to the Screen!")
 
 Additionally, grab my uart_puts function from uart.c if you like uart debug outputs. I'm using:
 
@@ -76,31 +77,46 @@ int main()
     
     static uint8_t ledval = 0; //LED blinking is just reassuring / sign of life 
 
+    //lets test every letter in the alphabet
+    char alphabet[26] = 
+    {
+        'A','B','C','D','E','F','G','H','I','J','K','L','M',
+        'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
+    };
+
+    //setup uart message
+    char message[50];
+    char messagept2[20];
+    char letter[2]; //for alphabet letter
+    strcpy(message, "Sucessfully wrote ");
+    strcpy(messagept2, " to the Screen!");
+
     //MAIN LOOP
     while (1) 
     {
-        uart_puts("Turning Screen Red...",USART1);
+        //loop and letter setup
+        unsigned int i = 0;
+        //strcpy(letter,alphabet[i]);
         ledval = 1-ledval;
-        ST7735_fillScreen(RED);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
-        uart_puts("Success!",USART1);
-        Delay(1000);
-        
-        ledval = 1-ledval;
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
-        uart_puts("Turning Screen Blue...",USART1);
-        ST7735_fillScreen(BLUE);
-        uart_puts("Success!",USART1);
-        Delay(1000);
-        
-        ledval = 1-ledval;
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
-        uart_puts("Turning Screen Green...",USART1);
-        ST7735_fillScreen(GREEN);
-        uart_puts("Success!",USART1);   
-        Delay(1000);
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET);
 
+        //create UART message 
+        strcat(message, &alphabet[i]);
+        strcat(message,messagept2);
+
+        //actually do screen stuff
+        ST7735_writeChar(alphabet[i], RED, GREEN, 10, 10);
+
+        //write to UART after writing to screen
+        uart_puts(message,USART1);
+        
+        //sign of life
+        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
+        Delay(1000);
+        
+        if(i>=25) //if we run out of chars
+        {
+            i=0; //reset i to 0
+        }
     }
 
    return(0);
