@@ -88,19 +88,20 @@ int main()
     char message[50];
     char messagept2[20];
     char letter[2]; //for alphabet letter
-    strcpy(message, "Sucessfully wrote ");
-    strcpy(messagept2, " to the Screen!");
-
+    unsigned int i = 0;
     //MAIN LOOP
     while (1) 
     {
-        //loop and letter setup
-        unsigned int i = 0;
-        //strcpy(letter,alphabet[i]);
+        //ledval
         ledval = 1-ledval;
 
+        //message setup
+        strcpy(message, "Sucessfully wrote ");
+        strcpy(messagept2, " to the Screen!");
+        letter[0] = (char) alphabet[i];
+        letter[1] = '\0';
         //create UART message 
-        strcat(message, &alphabet[i]);
+        strcat(message, letter);
         strcat(message,messagept2);
 
         //actually do screen stuff
@@ -112,8 +113,8 @@ int main()
         //sign of life
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
         Delay(1000);
-        
-        if(i>=25) //if we run out of chars
+        i++;
+        if(i>=26) //if we run out of chars
         {
             i=0; //reset i to 0
         }
