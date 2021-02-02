@@ -4,6 +4,7 @@
 #define LCD7735_H
 
 #define MADCTLGRAPHICS      0x6
+#define MADCTLTEXT          0x07
 #define MADCTLBMP           0x2
 
 #define ST7735_WIDTH        128
@@ -26,9 +27,11 @@ void ST7735_backlight(uint8_t on);
 void ST7735_fillScreen(uint16_t color);
 
 //letters and phrases
-void ST7735_writeChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
-    uint16_t startx, uint16_t starty);
-
+//void ST7735_writeChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
+    //uint16_t startx, uint16_t starty);0
+    
+void ST7735_writeChar(uint16_t x0, uint16_t y0,
+		unsigned char c, uint16_t textColor, uint16_t bgColor);
 //timer stuff
 void Delay(uint32_t nTime);
 void SysTick_Handler(void);

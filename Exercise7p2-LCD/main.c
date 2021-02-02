@@ -105,8 +105,8 @@ int main()
         strcat(message,messagept2);
 
         //actually do screen stuff
-        ST7735_writeChar(alphabet[i], RED, GREEN, 10, 10);
-
+        //ST7735_writeChar('A', BLACK, WHITE, 10, 10);
+         ST7735_writeChar(10, 10, alphabet[i], BLACK, WHITE);
         //write to UART after writing to screen
         uart_puts(message,USART1);
         
