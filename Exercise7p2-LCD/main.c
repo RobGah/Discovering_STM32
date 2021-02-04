@@ -89,6 +89,11 @@ int main()
     char messagept2[20];
     char letter[2]; //for alphabet letter
     unsigned int i = 0;
+
+    //Fill the screen with some solid color before doing our text loop
+    //This helps when visually troubleshooting
+    ST7735_fillScreen(BLACK);
+    
     //MAIN LOOP
     while (1) 
     {
@@ -104,9 +109,9 @@ int main()
         strcat(message, letter);
         strcat(message,messagept2);
 
-        //actually do screen stuff
-        //ST7735_writeChar('A', BLACK, WHITE, 10, 10);
-         ST7735_writeChar(10, 10, alphabet[i], BLACK, WHITE);
+        /*****actually do screen stuff*****/
+        ST7735_drawChar(alphabet[i], BLACK, WHITE, 10, 10);
+        
         //write to UART after writing to screen
         uart_puts(message,USART1);
         

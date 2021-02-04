@@ -267,95 +267,73 @@ void ST7735_fillScreen(uint16_t color)
     }
 }
 
-// void ST7735_writeChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
-// 	uint16_t startx, uint16_t starty)
-// {
-// 	/*inputs: 
-// 	letter: e.g. 'A'
-// 	lettercolor - ad. oculos
-// 	bgcolor - background color
-// 	startx, starty - starting pos. of letter
-// 	*/
-	
-// 	//Step 1: determine where we are in the font array
-// 	uint16_t location_in_font_array = 5*letter; //converts to a number and 5x to get pos. in font array
-	
-// 	//set our window - start x,y + room as described in the book
-// 	//each character is placed in a 6x10 rectangle leaving
-// 	//space between lines (3 pixels) and characters (1 pixel)
-// 	ST7735_setAddrWindow(startx, starty, startx+6, starty+9, MADCTLGRAPHICS);
-// 	//0-6 is 7 pixels, 0-9 is 10 pixels, right?
-
-// 	//for all 5 bytes that compose the letter
-// 	for(int i=0; i<5; i++) //each count is another defining of a "column" by the 8bit hex value
-// 	{
-// 		//get the hex value in font 
-// 		uint8_t font_hex = font[location_in_font_array +i];
-		
-// 		//for each bit in the hex value byte
-// 		for(int j=0; j<8; j++)
-// 		{
-// 			if(font_hex & 1) //if the last bit is a 1
-// 			{
-// 				ST7735_pushColor(&lettercolor,1); //its part of the letter
-// 			}
-// 			else
-// 			{
-// 				ST7735_pushColor(&bgcolor,1); //otherwise, its background.
-// 			}
-
-// 			font_hex = font_hex >> 1; //right shift out the used bit
-// 		}
-
-// 		//write same 2 bytes  8 times for the spacing.
-// 		for(int k = 0; k<8;k++)
-// 		{
-// 		ST7735_pushColor(&bgcolor,1); //write background to the 5th column
-// 		}
-// 	}
-
-// }
-
-/*This writeChar function is a total copy (w/ a minor edit) from 
-https://github.com/s1512783/DTSTM32Sols/blob/master/7.2_and_7.3_LCDtext_graphics/7735lcd.h
-
-Copied only after banging my head against a wall trying to figure out how to do it. 
-I was pretty close! I'm going to try to do this in MATCTRL 0x06 mode w/o inverting
-how the address is given and how the screen writes (aka 0x06 vs 0x07). 
-*/
-
-/* ST7735_drawChar - draws character C from ASCII bmp font defined in font.h */
-void ST7735_writeChar(uint16_t x0, uint16_t y0,
-		unsigned char c, uint16_t textColor, uint16_t bgColor)
+void ST7735_drawChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
+	uint16_t startx, uint16_t starty)
 {
-	uint8_t i, j, k;
+/*This drawChar function is based on: 
+https://github.com/s1512783/DTSTM32Sols/blob/master/7.2_and_7.3_LCDtext_graphics/7735lcd.h
+	Almost had it - M. Minkowski's implementation got me over the hump
 
-	// For some reason the Adafruit fonts seem to be rotated 90 degrees. I fixed this by swapping all the y's and x's.
-	// This required defining a new memory access type. Not elegant, but works.
-	ST7735_setAddrWindow(y0, x0, y0 + 9, x0 + 6, MADCTLTEXT); //10x7 window defined
-	// each character is stored as 5 lines
-	for (i = 0; i < 5; i++){
+	inputs: 
+	letter: e.g. 'A'
+	lettercolor - ad. oculos
+	bgcolor - background color
+	startx, starty - starting pos. of letter
 
-		uint8_t line = font[5*c + i]; // get line from font
+	UPDATE 2/4/21: 
+	-Got my homegrown function working after studying M. Minkowski's implementation.
+	-The letters appear in "landscape(ish) mode" if you go with 0x06 for setting address window
+	-Use 0x07 for portait mode, and think of it as 10x7 and not 7x10
+	-X is top-down, Y is left-right and writes "column by column" visually on the screen
+	*/
+	
+	//Step 1: determine where we are in the font array
+	uint16_t location_in_font_array = 5*letter; //converts to a number and 5x to get pos. in font array
+	
+	//Step 2: set our window - start x,y + room as described in the book
+	//each character is placed in a 10x6 (x is top down, y is left right) rectangle leaving
+	//space between lines (3 pixels) and characters (1 pixel)
+	ST7735_setAddrWindow(startx, starty, startx+9, starty+6, MADCTLTEXT);
 
-		//draw letter and single line spacing
-		for (j=0; j < 8; j++, line >>= 1){
-			if (line & 0x01)
-				ST7735_pushColor(&textColor, 1);
-			else
-				ST7735_pushColor(&bgColor, 1);
-		}
-
-		// draw line spacing
-		for(k=0;k<2;k++) //row 6 and 7 are blank
+	//Step 3:
+	//for all 5 bytes that compose the letter
+	for(int i=0; i<5; i++) 
+	//each loop is another defining of a "column" by the 8bit hex value
+	{
+		//get the hex value in font 
+		uint8_t font_hex = font[location_in_font_array +i];
+		
+		//for each bit in the hex value byte
+		for(int j=0; j<8; j++)
 		{
-			ST7735_pushColor(&bgColor,1);
-		}
-	}
+			if(font_hex & 1) //if the last bit is a 1
+			{
+				ST7735_pushColor(&lettercolor,1); //its part of the letter
+			}
+			else
+			{
+				ST7735_pushColor(&bgcolor,1); //otherwise, its background.
+			}
 
-	// draw character spacing
-	// ST7735_pushColor(&bgColor, 10); -- can't do this
-	// For some reason it gives erratic errors in the vertical line (random pixels turned on)
-	for (j = 0; j<10; j++)
-		ST7735_pushColor(&bgColor, 1);
+			font_hex = font_hex >> 1; //right shift out the used bit
+		}
+		
+		// draw line spacing
+		for(uint8_t k=0;k<2;k++) //row 9 and 10 are blank
+		{
+			ST7735_pushColor(&bgcolor,1);
+		}
+
+		
+	}
+		//write same 2 bytes  10 times for the spacing.
+		//Based on M. minkowski's implentation,
+		//I dont trust setting cnt in pushColor to 10
+		//Change loop count to get sanity check for how it writes top-down
+		for(int k = 0; k<10;k++)
+		{
+			ST7735_pushColor(&bgcolor,1); //write background to the 5th column
+		}
 }
+
+

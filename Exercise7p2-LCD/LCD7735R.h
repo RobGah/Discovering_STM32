@@ -27,11 +27,9 @@ void ST7735_backlight(uint8_t on);
 void ST7735_fillScreen(uint16_t color);
 
 //letters and phrases
-//void ST7735_writeChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
-    //uint16_t startx, uint16_t starty);0
-    
-void ST7735_writeChar(uint16_t x0, uint16_t y0,
-		unsigned char c, uint16_t textColor, uint16_t bgColor);
+void ST7735_drawChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
+    uint16_t startx, uint16_t starty);
+
 //timer stuff
 void Delay(uint32_t nTime);
 void SysTick_Handler(void);
