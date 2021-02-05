@@ -13,7 +13,7 @@
 
 /*
 
-***Last Updated 1/27/21***
+***Last Updated 2/5/21***
 
 Setup:
 
@@ -32,8 +32,9 @@ SD_CS   PA6         SD card Select
 GND     GND         Ground
 
 To test LCD:
--Cycle thru alphabet on screen to test letters
+-drawChar: Cycle thru alphabet on screen to test letters
 -Send corresponding message over UART (e.g. "Successfully wrote %c to the Screen!")
+-drawString: Print silly phrase on screen.
 
 Additionally, grab my uart_puts function from uart.c if you like uart debug outputs. I'm using:
 
@@ -84,6 +85,8 @@ int main()
         'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
     };
 
+    char test_phrase[] = "This cosmic dance of bursting decadence and withheld permissions twists all our arms collectively, but if sweetness can win, and it can, then I'll still be here tomorrow to high-five you yesterday, my friend. Peace.";
+
     //setup uart message
     char message[50];
     char messagept2[20];
@@ -94,12 +97,16 @@ int main()
     //This helps when visually troubleshooting
     ST7735_fillScreen(BLACK);
     
+    // #define CHARTEST
+    #define STRINGTEST
+
     //MAIN LOOP
     while (1) 
     {
         //ledval
         ledval = 1-ledval;
 
+        #ifdef CHARTEST
         //message setup
         strcpy(message, "Sucessfully wrote ");
         strcpy(messagept2, " to the Screen!");
@@ -114,7 +121,12 @@ int main()
         
         //write to UART after writing to screen
         uart_puts(message,USART1);
+        #endif
         
+        #ifdef STRINGTEST
+        ST7735_drawString(test_phrase, BLACK, WHITE, 5,5);
+        #endif    
+
         //sign of life
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
         Delay(1000);

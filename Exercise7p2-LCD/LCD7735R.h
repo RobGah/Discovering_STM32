@@ -29,6 +29,8 @@ void ST7735_fillScreen(uint16_t color);
 //letters and phrases
 void ST7735_drawChar(char letter, uint16_t lettercolor, uint16_t bgcolor, 
     uint16_t startx, uint16_t starty);
+void ST7735_drawString(char *phrase, uint16_t lettercolor, uint16_t bgcolor, 
+uint16_t startx, uint16_t starty);
 
 //timer stuff
 void Delay(uint32_t nTime);

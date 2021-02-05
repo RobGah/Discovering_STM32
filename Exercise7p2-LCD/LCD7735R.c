@@ -5,6 +5,7 @@
 #include "spi.h"
 #include "LCD7735R.h"
 #include "glcdfont.h"
+#include <string.h>
 
 /*
 
@@ -291,20 +292,20 @@ https://github.com/s1512783/DTSTM32Sols/blob/master/7.2_and_7.3_LCDtext_graphics
 	uint16_t location_in_font_array = 5*letter; //converts to a number and 5x to get pos. in font array
 	
 	//Step 2: set our window - start x,y + room as described in the book
-	//each character is placed in a 10x6 (x is top down, y is left right) rectangle leaving
+	//each character is placed in a 10x7 (x is top down, y is left right) rectangle leaving
 	//space between lines (3 pixels) and characters (1 pixel)
 	ST7735_setAddrWindow(startx, starty, startx+9, starty+6, MADCTLTEXT);
 
 	//Step 3:
 	//for all 5 bytes that compose the letter
-	for(int i=0; i<5; i++) 
+	for(uint8_t i=0; i<5; i++) 
 	//each loop is another defining of a "column" by the 8bit hex value
 	{
 		//get the hex value in font 
 		uint8_t font_hex = font[location_in_font_array +i];
 		
 		//for each bit in the hex value byte
-		for(int j=0; j<8; j++)
+		for(uint8_t j=0; j<8; j++)
 		{
 			if(font_hex & 1) //if the last bit is a 1
 			{
@@ -336,4 +337,50 @@ https://github.com/s1512783/DTSTM32Sols/blob/master/7.2_and_7.3_LCDtext_graphics
 		}
 }
 
+void ST7735_drawString(char *phrase, uint16_t lettercolor, uint16_t bgcolor, 
+	uint16_t startx, uint16_t starty)
+{
+/* writes a character-based phrase to the screen!
 
+inputs: 
+-pointer to a phrase to be written
+-letter color for text
+-background color for text
+-starting position of phrase in x and y
+
+***Horizontal short side of screen  = y
+***Vertical long side of screen = x 
+*/
+
+//track our position on screen 
+uint16_t current_position_x = startx;
+uint16_t current_position_y = starty;
+
+//For each char in the phrase
+	for(uint8_t i=0; i<strlen(phrase); i++)
+	{
+		//if a new line - UNTESTED
+		if(phrase[i]=='\n')
+		{
+			current_position_x += 10; //start a new line 10 rows down
+			current_position_y = starty; //return to the starting y position
+		}
+	
+		//handling wrap and end of screen issues
+		if(current_position_y + 7 > ST7735_WIDTH) 
+		{
+			current_position_x += 10;
+			current_position_y = starty;
+		}
+
+		if(current_position_x + 10 > ST7735_HEIGHT - 10)
+		{
+			return; //terminate function if we exceed writable space on the screen
+		}
+	
+		else ST7735_drawChar(phrase[i],lettercolor,bgcolor,current_position_x, current_position_y);
+
+		//increment current position horizontally
+		current_position_y +=6;
+	}
+}
