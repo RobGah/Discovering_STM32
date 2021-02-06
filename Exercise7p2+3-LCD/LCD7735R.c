@@ -6,6 +6,7 @@
 #include "LCD7735R.h"
 #include "glcdfont.h"
 #include <string.h>
+#include <stdbool.h>
 
 /*
 
@@ -385,12 +386,61 @@ uint16_t current_position_y = starty;
 	}
 }
 
-void drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor)
+void ST7735_drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor)
 {
-	/* might not need*/
+	/*draws a single pixel
+
+	inputs: x,y: pixel location to draw.
+	pixelcolor: ad oculos
+	*/
+
+	//set window to any window size - it doesnt matter
+	ST7735_setAddrWindow(x, y, x+1, y+1,MADCTLGRAPHICS); //might not even need to +1 these?
+	ST7735_pushColor(&pixelcolor,1); //single pushColor command
 }
 
-void drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height, 
+
+void ST7735_fillSpace(uint16_t xo, uint16_t yo, uint16_t x1, uint16_t y1, uint16_t color)
+{
+	/* fills a rectangular section of the screen with a color
+	inputs:
+	x0,y0,x1,y1: coordinates of the start and end points of the rectangular screen
+	color: ad oculos
+	*/
+
+	//just like fill screen but less!
+	ST7735_setAddrWindow(xo,yo,x1-1,y1-1,MADCTLGRAPHICS);
+
+	//ruthless copy-paste of fillScreen guts
+	for (uint8_t x = 0; x < x1; x++)
+    {
+        for (uint8_t y = 0; y < y1; y++)
+        {
+            ST7735_pushColor(&color, 1);
+        }
+    }
+}
+void ST7735_drawLine(uint16_t x0, uint16_t y0, uint8_t length, uint8_t thickness,
+	uint16_t linecolor, bool linestyle)
+	{
+		/* Draws a line either vertically or horizontally
+		inputs: 
+		-x0, y0: starting point of line
+		-length: line length - goes top-down and left-right
+		-thickness: line thickness
+		-linecolor: ad oculos
+		-linestyle: horizontal if FALSE or 0 , vertical if 1 or TRUE
+		*/
+		if (linestyle == 1)
+		{
+			ST7735_fillSpace(x0, y0, x0+thickness, y0+length, linecolor);
+		}
+		
+		else ST7735_fillSpace(x0, y0, x0+length, y0+thickness,linecolor);
+
+	}
+
+void ST7735_drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height, 
 	uint16_t linecolor, uint16_t bgcolor)
 {
 /* draws a rectangle of fixed height/width
@@ -404,27 +454,31 @@ ST7735_setAddrWindow(startx, starty, startx + width, starty + height, MADCTLGRAP
 
 //assumption: we're writing successive rows column by column
 uint16_t current_x_position = startx;
-uint16_t curent_y_position = starty;
+uint16_t current_y_position = starty;
 //Step 2: Loop columns
-for(uint8_t x = 0; x<len(startx+width - startx); x++)
+for(uint8_t x = 0; x<(startx+width - startx); x++)
 {
 	//loop rows
-	for(uint8_t y = 0; y<len(starty+height - starty); y++)
+	for(uint8_t y = 0; y<(starty+height - starty); y++)
 	{
 		//if we're on a horizontal "line"
-		if(current_x_position == startx || current_x_position == current_x_position + width )
+		if(current_x_position == startx || current_x_position == current_x_position + width)
 		{
 			ST7735_pushColor(&linecolor,1);
 		}
 
 		else ST7735_pushColor(&bgcolor,1);
+		
+		current_y_position++;
+
 	}
+	current_x_position++;
 }
 
 }
 
-void drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius,
-	uint16_t lettercolor, uint16_t bgcolor)
+void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius,
+	uint16_t linecolor, uint16_t bgcolor)
 {
 /* draws a circle of fixed radius
 input:
@@ -432,5 +486,5 @@ input:
 -radius ad oculos
 */
 
-
 }
+

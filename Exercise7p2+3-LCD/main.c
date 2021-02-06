@@ -5,6 +5,7 @@
 #include <stm32f10x_usart.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 //#include <stdio.h> //ehhhh
 
 #include "uart.h"
@@ -97,8 +98,12 @@ int main()
     //This helps when visually troubleshooting
     ST7735_fillScreen(BLACK);
     
+
+    /*Select your test to run in the main loop for the LCD*/
     // #define CHARTEST
-    #define STRINGTEST
+    //#define STRINGTEST
+    #define RECTTEST
+    //#define CIRCLETEST
 
     //MAIN LOOP
     while (1) 
@@ -127,6 +132,9 @@ int main()
         ST7735_drawString(test_phrase, BLACK, WHITE, 5,5);
         #endif    
 
+        #ifdef RECTTEST
+        ST7735_drawLine(10,10,100,4,WHITE,0);
+        #endif
         //sign of life
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
         Delay(1000);
