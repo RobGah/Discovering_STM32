@@ -37,8 +37,8 @@ uint16_t startx, uint16_t starty);
 // lines, 'tangles, circles and shapes
 void ST7735_drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height, 
 	uint16_t linecolor, uint8_t thickness);
-void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius,
-	uint16_t linecolor, uint16_t bgcolor);
+void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t r,
+	uint16_t linecolor);
 void ST7735_fillSpace(uint16_t xo, uint16_t yo, uint16_t x1, uint16_t y1, uint16_t color);
 void ST7735_drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor);
 void ST7735_drawLine(uint16_t x0, uint16_t y0, uint8_t length, uint8_t thickness,

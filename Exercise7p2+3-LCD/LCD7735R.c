@@ -460,14 +460,82 @@ ST7735_drawLine(startx,starty+height,width,thickness,linecolor,0);
 
 }
 
-void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius,
-	uint16_t linecolor, uint16_t bgcolor)
+void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t r,
+	uint16_t linecolor)
 {
-/* draws a circle of fixed radius
-input:
--centerx and center y is the location of the circle center
--radius ad oculos
-*/
+	/* draws a circle of fixed radius by implementing the midpoint circle drawing algorithm:
+	https://www.geeksforgeeks.org/mid-point-circle-drawing-algorithm/
 
-}
+	^EXCELLENT explanation of this algorithma and this function was entirely adapted from the example code.
+
+	tl;dr on the link:  
+	- from any point, your next point is either at (x,y+1) OR (x-1,y+1)
+	- point P is at P = x^2 + y^2 - r^2
+	- if P<0, the point is inside the circle, if P=0 its on the circle, and P>0 its outside
+	- if P is inside or on the pixel is (x,y+1).
+	- if P is outside the circle the pixel is (x-1, y+1) and x is decremented
+	- plot point in the 1st 8th of the circle then reflect it to the other 7 "octants"
+	- increment y and repeat until x < y (outside 1st octant)
+	- voila!
+
+	input:
+	-centerx and center y is the location of the circle center
+	-r is the radius
+	linecolor ad oculos
+	*/
+
+	uint8_t x = r; //initialize x to radius value
+	uint8_t y = 0;
+
+	ST7735_drawPixel(x+centerx,y+centery,linecolor); //draw a first point (r,0)
+
+	if(r> 0) //if r is > 0 and we don't just have a center point
+	{
+		//plot the other initial 3 points
+		ST7735_drawPixel(x+centerx, -y+centery, linecolor);
+		ST7735_drawPixel(y+centerx, x+centery, linecolor);
+		ST7735_drawPixel(-y+centerx, x+centery, linecolor);
+	}
+	 // Initializing the value of P 
+    int P = 1 - r; 
+
+    while (x > y) //while we are in the 1st octant aka angle<45deg
+    {  
+        y++; 
+          
+        // If Mid-point is inside or on the perimeter 
+        if (P <= 0) 
+            P = P + 2*y + 1; 
+              
+        // If Mid-point is outside the perimeter 
+        else
+        { 
+            x--; 
+            P = P + 2*y - 2*x + 1; 
+        } 
+          
+        // All the perimeter points have already been printed 
+		//If we are out of the 1st octant
+        if (x < y) 
+            break; //exit our loop
+          
+        // Plot the generated point and its reflection 
+        // in the other octants after translation 
+        ST7735_drawPixel( x + centerx, y + centery, linecolor); 
+        ST7735_drawPixel( -x + centerx, y + centery, linecolor); 
+        ST7735_drawPixel( x + centerx, -y + centery, linecolor); 
+        ST7735_drawPixel( -x + centerx, -y + centery,linecolor); 
+          
+        // If the generated point is on the line x = y (aka at 45deg) then  
+        // the perimeter points have already been printed 
+        if (x != y) 
+        { 
+			//the other 4 octant points are here
+            ST7735_drawPixel(y + centerx, x + centery, linecolor); 
+            ST7735_drawPixel( -y + centerx, x + centery, linecolor); 
+            ST7735_drawPixel( y + centerx, -x + centery, linecolor); 
+            ST7735_drawPixel( -y + centerx, -x + centery, linecolor); 
+        } 
+    }  
+} 
 

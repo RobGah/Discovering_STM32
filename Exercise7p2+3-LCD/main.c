@@ -14,7 +14,7 @@
 
 /*
 
-***Last Updated 2/5/21***
+***Last Updated 2/6/21***
 
 Setup:
 
@@ -33,9 +33,8 @@ SD_CS   PA6         SD card Select
 GND     GND         Ground
 
 To test LCD:
--drawChar: Cycle thru alphabet on screen to test letters
--Send corresponding message over UART (e.g. "Successfully wrote %c to the Screen!")
--drawString: Print silly phrase on screen.
+-Selectable tests for drawChar drawString drawRectangle and drawCircle
+-uncomment ifdef's to test out each function
 
 Additionally, grab my uart_puts function from uart.c if you like uart debug outputs. I'm using:
 
@@ -102,8 +101,8 @@ int main()
     /*Select your test to run in the main loop for the LCD*/
     // #define CHARTEST
     //#define STRINGTEST
-    #define RECTTEST
-    //#define CIRCLETEST
+    //#define RECTTEST
+    #define CIRCLETEST
 
     //MAIN LOOP
     while (1) 
@@ -137,7 +136,7 @@ int main()
         #endif
         
         #ifdef CIRCLETEST
-        //ST7735_drawCircle
+        ST7735_drawCircle(64,80,60,WHITE);
         #endif
 
         //sign of life
