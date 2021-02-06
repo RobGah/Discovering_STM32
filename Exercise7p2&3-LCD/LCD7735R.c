@@ -384,3 +384,53 @@ uint16_t current_position_y = starty;
 		current_position_y +=6;
 	}
 }
+
+void drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor)
+{
+	/* might not need*/
+}
+
+void drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height, 
+	uint16_t linecolor, uint16_t bgcolor)
+{
+/* draws a rectangle of fixed height/width
+input: 
+-startx, starty is the location of the first corner 
+-width and height ad oculos 
+*/
+
+//Step 1: Set the address window.
+ST7735_setAddrWindow(startx, starty, startx + width, starty + height, MADCTLGRAPHICS);
+
+//assumption: we're writing successive rows column by column
+uint16_t current_x_position = startx;
+uint16_t curent_y_position = starty;
+//Step 2: Loop columns
+for(uint8_t x = 0; x<len(startx+width - startx); x++)
+{
+	//loop rows
+	for(uint8_t y = 0; y<len(starty+height - starty); y++)
+	{
+		//if we're on a horizontal "line"
+		if(current_x_position == startx || current_x_position == current_x_position + width )
+		{
+			ST7735_pushColor(&linecolor,1);
+		}
+
+		else ST7735_pushColor(&bgcolor,1);
+	}
+}
+
+}
+
+void drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius,
+	uint16_t lettercolor, uint16_t bgcolor)
+{
+/* draws a circle of fixed radius
+input:
+-centerx and center y is the location of the circle center
+-radius ad oculos
+*/
+
+
+}

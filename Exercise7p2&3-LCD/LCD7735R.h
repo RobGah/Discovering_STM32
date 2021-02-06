@@ -32,6 +32,10 @@ void ST7735_drawChar(char letter, uint16_t lettercolor, uint16_t bgcolor,
 void ST7735_drawString(char *phrase, uint16_t lettercolor, uint16_t bgcolor, 
 uint16_t startx, uint16_t starty);
 
+//'tangles and circles
+void drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height);
+void drawCircle(uint8_t centerx, uint8_t centery, uint8_t radius);
+
 //timer stuff
 void Delay(uint32_t nTime);
 void SysTick_Handler(void);
