@@ -133,16 +133,24 @@ int main()
         #endif    
 
         #ifdef RECTTEST
-        ST7735_drawLine(10,10,100,4,WHITE,0);
+        ST7735_drawRectangle(30,30,50,30,GREEN,4);
         #endif
+        
+        #ifdef CIRCLETEST
+        //ST7735_drawCircle
+        #endif
+
         //sign of life
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
         Delay(1000);
+        
+        #ifdef CHARTEST
         i++;
         if(i>=26) //if we run out of chars
         {
             i=0; //reset i to 0
         }
+        #endif
     }
 
    return(0);

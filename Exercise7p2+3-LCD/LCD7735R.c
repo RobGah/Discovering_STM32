@@ -441,39 +441,22 @@ void ST7735_drawLine(uint16_t x0, uint16_t y0, uint8_t length, uint8_t thickness
 	}
 
 void ST7735_drawRectangle(uint8_t startx, uint8_t starty, uint8_t width, uint8_t height, 
-	uint16_t linecolor, uint16_t bgcolor)
+	uint16_t linecolor, uint8_t thickness)
 {
 /* draws a rectangle of fixed height/width
 input: 
 -startx, starty is the location of the first corner 
--width and height ad oculos 
+-width and height are left to right x and y top to bottom properties as defined
 */
 
-//Step 1: Set the address window.
-ST7735_setAddrWindow(startx, starty, startx + width, starty + height, MADCTLGRAPHICS);
-
-//assumption: we're writing successive rows column by column
-uint16_t current_x_position = startx;
-uint16_t current_y_position = starty;
-//Step 2: Loop columns
-for(uint8_t x = 0; x<(startx+width - startx); x++)
-{
-	//loop rows
-	for(uint8_t y = 0; y<(starty+height - starty); y++)
-	{
-		//if we're on a horizontal "line"
-		if(current_x_position == startx || current_x_position == current_x_position + width)
-		{
-			ST7735_pushColor(&linecolor,1);
-		}
-
-		else ST7735_pushColor(&bgcolor,1);
-		
-		current_y_position++;
-
-	}
-	current_x_position++;
-}
+//Top horizontal
+ST7735_drawLine(startx,starty,width,thickness,linecolor,0);
+//Left vertical
+ST7735_drawLine(startx,starty,height,thickness,linecolor,1);
+//Right vertical
+ST7735_drawLine(startx+width,starty,height+thickness,thickness,linecolor,1);
+//Bottom horizontal
+ST7735_drawLine(startx,starty+height,width,thickness,linecolor,0);
 
 }
 
