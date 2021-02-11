@@ -41,6 +41,7 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
 #include "spi.h"
+#include "misc.h"
 
 //define chip select for the SD on the LCD board
 #define GPIO_Pin_CS GPIO_Pin_6
@@ -50,23 +51,22 @@
 
 enum spiSpeed Speed = SPI_SLOW;
 
-void Delay(uint32_t);
+//NOT NEEDED!
 
+// #define DO_INIT()					/* Initialize port for MMC DO as input */
+// #define DO			(PINB &	0x01)	/* Test for MMC DO ('H':true, 'L':false) */
 
-#define DO_INIT()					/* Initialize port for MMC DO as input */
-#define DO			(PINB &	0x01)	/* Test for MMC DO ('H':true, 'L':false) */
+// #define DI_INIT()	DDRB  |= 0x02	/* Initialize port for MMC DI as output */
+// #define DI_H()		PORTB |= 0x02	/* Set MMC DI "high" */
+// #define DI_L()		PORTB &= 0xFD	/* Set MMC DI "low" */
 
-#define DI_INIT()	DDRB  |= 0x02	/* Initialize port for MMC DI as output */
-#define DI_H()		PORTB |= 0x02	/* Set MMC DI "high" */
-#define DI_L()		PORTB &= 0xFD	/* Set MMC DI "low" */
+// #define CK_INIT()	DDRB  |= 0x04	/* Initialize port for MMC SCLK as output */
+// #define CK_H()		PORTB |= 0x04	/* Set MMC SCLK "high" */
+// #define	CK_L()		PORTB &= 0xFB	/* Set MMC SCLK "low" */
 
-#define CK_INIT()	DDRB  |= 0x04	/* Initialize port for MMC SCLK as output */
-#define CK_H()		PORTB |= 0x04	/* Set MMC SCLK "high" */
-#define	CK_L()		PORTB &= 0xFB	/* Set MMC SCLK "low" */
-
-#define CS_INIT()	DDRB  |= 0x08	/* Initialize port for MMC CS as output */
-#define	CS_H()		PORTB |= 0x08	/* Set MMC CS "high" */
-#define CS_L()		PORTB &= 0xF7	/* Set MMC CS "low" */
+// #define CS_INIT()	DDRB  |= 0x08	/* Initialize port for MMC CS as output */
+// #define	CS_H()		PORTB |= 0x08	/* Set MMC CS "high" */
+// #define CS_L()		PORTB &= 0xF7	/* Set MMC CS "low" */
 
 
 //replaced by RG's Delay() as per author
@@ -407,63 +407,115 @@ DSTATUS disk_status (
 /* Initialize Disk Drive                                                 */
 /*-----------------------------------------------------------------------*/
 
+// DSTATUS disk_initialize (
+// 	BYTE drv		/* Physical drive nmuber (0) */
+// )
+// {
+// 	BYTE n, ty, cmd, buf[4];
+// 	UINT tmr;
+// 	DSTATUS s;
+
+
+// 	if (drv) return RES_NOTRDY;
+
+// 	Delay(10);			/* 10ms */
+// 	CS_INIT(); CS_H();		/* Initialize port pin tied to CS */
+// 	CK_INIT(); CK_L();		/* Initialize port pin tied to SCLK */
+// 	DI_INIT();				/* Initialize port pin tied to DI */
+// 	DO_INIT();				/* Initialize port pin tied to DO */
+
+// 	for (n = 10; n; n--) rcvr_mmc(buf, 1);	/* Apply 80 dummy clocks and the card gets ready to receive command */
+
+// 	ty = 0;
+// 	if (send_cmd(CMD0, 0) == 1) {			/* Enter Idle state */
+// 		if (send_cmd(CMD8, 0x1AA) == 1) {	/* SDv2? */
+// 			rcvr_mmc(buf, 4);							/* Get trailing return value of R7 resp */
+// 			if (buf[2] == 0x01 && buf[3] == 0xAA) {		/* The card can work at vdd range of 2.7-3.6V */
+// 				for (tmr = 1000; tmr; tmr--) {			/* Wait for leaving idle state (ACMD41 with HCS bit) */
+// 					if (send_cmd(ACMD41, 1UL << 30) == 0) break;
+// 					Delay(1);
+// 				}
+// 				if (tmr && send_cmd(CMD58, 0) == 0) {	/* Check CCS bit in the OCR */
+// 					rcvr_mmc(buf, 4);
+// 					ty = (buf[0] & 0x40) ? CT_SDC2 | CT_BLOCK : CT_SDC2;	/* SDv2+ */
+// 				}
+// 			}
+// 		} else {							/* SDv1 or MMCv3 */
+// 			if (send_cmd(ACMD41, 0) <= 1) 	{
+// 				ty = CT_SDC2; cmd = ACMD41;	/* SDv1 */
+// 			} else {
+// 				ty = CT_MMC3; cmd = CMD1;	/* MMCv3 */
+// 			}
+// 			for (tmr = 1000; tmr; tmr--) {			/* Wait for leaving idle state */
+// 				if (send_cmd(cmd, 0) == 0) break;
+// 				Delay(1);
+// 			}
+// 			if (!tmr || send_cmd(CMD16, 512) != 0)	/* Set R/W block length to 512 */
+// 				ty = 0;
+// 		}
+// 	}
+// 	CardType = ty;
+// 	s = ty ? 0 : STA_NOINIT;
+// 	Stat = s;
+
+// 	deselect();
+
+// 	return s;
+// }
+
+//Grabbed disk-initialize from the stm32 example code and ported it to generic
+
 DSTATUS disk_initialize (
-	BYTE drv		/* Physical drive nmuber (0) */
+	BYTE drv		/* Physical drive number (0) */
 )
 {
-	BYTE n, ty, cmd, buf[4];
-	UINT tmr;
-	DSTATUS s;
+	BYTE n, cmd, ty, ocr[4];
+	UINT Timer1;
 
 
-	if (drv) return RES_NOTRDY;
+	if (drv) return STA_NOINIT;			/* Supports only drive 0 */
+	init_spi();							/* Initialize SPI */
 
-	Delay(10);			/* 10ms */
-	CS_INIT(); CS_H();		/* Initialize port pin tied to CS */
-	CK_INIT(); CK_L();		/* Initialize port pin tied to SCLK */
-	DI_INIT();				/* Initialize port pin tied to DI */
-	DO_INIT();				/* Initialize port pin tied to DO */
+	if (Stat & STA_NODISK) return Stat;	/* Is card existing in the soket? */
 
-	for (n = 10; n; n--) rcvr_mmc(buf, 1);	/* Apply 80 dummy clocks and the card gets ready to receive command */
+	FCLK_SLOW();
+	for (n = 10; n; n--) xchg_spi(0xFF);	/* Send 80 dummy clocks */
 
 	ty = 0;
-	if (send_cmd(CMD0, 0) == 1) {			/* Enter Idle state */
+	if (send_cmd(CMD0, 0) == 1) {			/* Put the card SPI/Idle state */
+		Timer1 = 1000;						/* Initialization timeout = 1 sec */
 		if (send_cmd(CMD8, 0x1AA) == 1) {	/* SDv2? */
-			rcvr_mmc(buf, 4);							/* Get trailing return value of R7 resp */
-			if (buf[2] == 0x01 && buf[3] == 0xAA) {		/* The card can work at vdd range of 2.7-3.6V */
-				for (tmr = 1000; tmr; tmr--) {			/* Wait for leaving idle state (ACMD41 with HCS bit) */
-					if (send_cmd(ACMD41, 1UL << 30) == 0) break;
-					Delay(1);
-				}
-				if (tmr && send_cmd(CMD58, 0) == 0) {	/* Check CCS bit in the OCR */
-					rcvr_mmc(buf, 4);
-					ty = (buf[0] & 0x40) ? CT_SDC2 | CT_BLOCK : CT_SDC2;	/* SDv2+ */
+			for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);	/* Get 32 bit return value of R7 resp */
+			if (ocr[2] == 0x01 && ocr[3] == 0xAA) {				/* Is the card supports vcc of 2.7-3.6V? */
+				while (Timer1 && send_cmd(ACMD41, 1UL << 30)) ;	/* Wait for end of initialization with ACMD41(HCS) */
+				if (Timer1 && send_cmd(CMD58, 0) == 0) {		/* Check CCS bit in the OCR */
+					for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);
+					ty = (ocr[0] & 0x40) ? CT_SDC2 | CT_BLOCK : CT_SDC2;	/* Card id SDv2 */
 				}
 			}
-		} else {							/* SDv1 or MMCv3 */
-			if (send_cmd(ACMD41, 0) <= 1) 	{
-				ty = CT_SDC2; cmd = ACMD41;	/* SDv1 */
+		} else {	/* Not SDv2 card */
+			if (send_cmd(ACMD41, 0) <= 1) 	{	/* SDv1 or MMC? */
+				ty = CT_SDC1; cmd = ACMD41;	/* SDv1 (ACMD41(0)) */
 			} else {
-				ty = CT_MMC3; cmd = CMD1;	/* MMCv3 */
+				ty = CT_MMC3; cmd = CMD1;	/* MMCv3 (CMD1(0)) */
 			}
-			for (tmr = 1000; tmr; tmr--) {			/* Wait for leaving idle state */
-				if (send_cmd(cmd, 0) == 0) break;
-				Delay(1);
-			}
-			if (!tmr || send_cmd(CMD16, 512) != 0)	/* Set R/W block length to 512 */
+			while (Timer1 && send_cmd(cmd, 0)) ;		/* Wait for end of initialization */
+			if (!Timer1 || send_cmd(CMD16, 512) != 0)	/* Set block length: 512 */
 				ty = 0;
 		}
 	}
-	CardType = ty;
-	s = ty ? 0 : STA_NOINIT;
-	Stat = s;
-
+	CardType = ty;	/* Card type */
 	deselect();
 
-	return s;
+	if (ty) {			/* OK */
+		FCLK_FAST();			/* Set fast clock */
+		Stat &= ~STA_NOINIT;	/* Clear STA_NOINIT flag */
+	} else {			/* Failed */
+		Stat = STA_NOINIT;
+	}
+
+	return Stat;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */

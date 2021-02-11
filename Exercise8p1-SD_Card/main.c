@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "diskio.h"
-#include "ff.h"
 #include "uart.h"
 #include "spi.h"
 #include "LCD7735R.h"
@@ -78,78 +77,42 @@ int main()
     
     static uint8_t ledval = 0; //LED blinking is just reassuring / sign of life 
 
-    //lets test every letter in the alphabet
-    char alphabet[26] = 
-    {
-        'A','B','C','D','E','F','G','H','I','J','K','L','M',
-        'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
-    };
-
-    char test_phrase[] = "This cosmic dance of bursting decadence and withheld permissions twists all our arms collectively, but if sweetness can win, and it can, then I'll still be here tomorrow to high-five you yesterday, my friend. Peace.";
-
-    //setup uart message
-    char message[50];
-    char messagept2[20];
-    char letter[2]; //for alphabet letter
-    unsigned int i = 0;
-
-    //Fill the screen with some solid color before doing our text loop
-    //This helps when visually troubleshooting
-    ST7735_fillScreen(BLACK);
-    
-
-    /*Select your test to run in the main loop for the LCD*/
-    // #define CHARTEST
-    //#define STRINGTEST
-    //#define RECTTEST
-    #define CIRCLETEST
 
     //MAIN LOOP
     while (1) 
     {
-        //ledval
+        //ledval toggle 
         ledval = 1-ledval;
+        f_mount(0, &Fatfs);/* Register volume work area */
+        uart_puts("Opening an existing file (message.txt)");
+        rc = f_open (&Fil , "MESSAGE.TXT", FA_READ);
+        if (!rc) {
+            xprintf("\nType the file content .\n");
+            for (;;) {
+            /* Read a chunk of file */
+            rc = f_read (&Fil , Buff , sizeof Buff , &br);
+            if (rc || !br) break;/* Error or end of file */
+            for (i = 0; i < br; i++)/* Type the data */
+                myputchar(Buff[i]);
+            }
+            if (rc) die(rc);
+            xprintf("\nClose the file.\n");
+            rc = f_close (&Fil);
+            if (rc) die(rc);
+        }
+        xprintf("\nCreate a new file (hello.txt).\n");
+        rc = f_open (&Fil , "HELLO.TXT", FA_WRITE | FA_CREATE_ALWAYS);
+        if (rc) die(rc);
+        xprintf("\nWrite a text data. (Hello world !)\n");
+        rc = f_write (&Fil , "Hello world !\r\n", 14, &bw);
+        if (rc) die(rc);
+        xprintf("%u bytes written .\n", bw);
 
-        #ifdef CHARTEST
-        //message setup
-        strcpy(message, "Sucessfully wrote ");
-        strcpy(messagept2, " to the Screen!");
-        letter[0] = (char) alphabet[i];
-        letter[1] = '\0';
-        //create UART message 
-        strcat(message, letter);
-        strcat(message,messagept2);
-
-        /*****actually do screen stuff*****/
-        ST7735_drawChar(alphabet[i], BLACK, WHITE, 10, 10);
-        
-        //write to UART after writing to screen
-        uart_puts(message,USART1);
-        #endif
-        
-        #ifdef STRINGTEST
-        ST7735_drawString(test_phrase, BLACK, WHITE, 5,5);
-        #endif    
-
-        #ifdef RECTTEST
-        ST7735_drawRectangle(30,30,50,30,GREEN,4);
-        #endif
-        
-        #ifdef CIRCLETEST
-        ST7735_drawCircle(64,80,60,WHITE);
-        #endif
 
         //sign of life
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
         Delay(1000);
         
-        #ifdef CHARTEST
-        i++;
-        if(i>=26) //if we run out of chars
-        {
-            i=0; //reset i to 0
-        }
-        #endif
     }
 
    return(0);
