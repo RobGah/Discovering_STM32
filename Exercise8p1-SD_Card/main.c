@@ -11,10 +11,10 @@
 #include "uart.h"
 #include "spi.h"
 #include "LCD7735R.h"
-
+#include "misc.h"
 /*
 
-***Last Updated 2/6/21***
+***Last Updated 2/11/21***
 
 Setup:
 
@@ -32,9 +32,9 @@ LCD CS  PA5         LCD Select
 SD_CS   PA6         SD card Select
 GND     GND         Ground
 
-To test LCD:
--Selectable tests for drawChar drawString drawRectangle and drawCircle
--uncomment ifdef's to test out each function
+To test microSD card / FatFS:
+-Format Drive and put "message.txt" on drive w/ some phrase in it
+-Write "hello.txt" to SD card. 
 
 Additionally, grab my uart_puts function from uart.c if you like uart debug outputs. I'm using:
 
@@ -154,6 +154,7 @@ int main()
 
    return(0);
 }
+
 
 #ifdef USE_FULL_ASSERT
 void assert_failed(uint8_t* file , uint32_t line)

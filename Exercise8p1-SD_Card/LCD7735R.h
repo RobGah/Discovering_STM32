@@ -44,7 +44,4 @@ void ST7735_drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor);
 void ST7735_drawLine(uint16_t x0, uint16_t y0, uint8_t length, uint8_t thickness,
 	uint16_t linecolor, bool linestyle);
 
-//timer stuff
-void Delay(uint32_t nTime);
-void SysTick_Handler(void);
 #endif
