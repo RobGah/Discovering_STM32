@@ -111,6 +111,6 @@ int uart_puts(char *array,USART_TypeDef* USARTx)
             uart_putc(array[i],USARTx);
         }
     
-    uart_putc('\n',USARTx); //auto newline after string 
+    uart_putc('\r\n',USARTx); //auto newline after string 
     return(0);
 }

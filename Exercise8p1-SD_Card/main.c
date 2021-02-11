@@ -56,7 +56,7 @@ int main()
       //uart port opened for debugging
     uart_open(USART1,9600);
     uart_puts("UART is Live.",USART1);
-    ST7735_init(); //stuck here?
+    ST7735_init();
     uart_puts("ST7735 Initialized.",USART1);
     ST7735_backlight(1);
     uart_puts("LCD Backlight ON.",USART1);

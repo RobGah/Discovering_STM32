@@ -44,7 +44,7 @@
 
 //define chip select for the SD on the LCD board
 #define GPIO_Pin_CS GPIO_Pin_6
-#define GPIO_CS GPIO_A
+#define GPIO_CS GPIOA
 #define RCC_APB2Periph_GPIO_CS RCC_APB2Periph_GPIOA
 #define SD_SPI SPI2
 
