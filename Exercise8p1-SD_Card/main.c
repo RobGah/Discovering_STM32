@@ -11,6 +11,8 @@
 #include "spi.h"
 #include "LCD7735R.h"
 #include "misc.h"
+#include "ff.h"
+
 /*
 
 ***Last Updated 2/11/21***
@@ -46,8 +48,11 @@ GND     GND         GND
 */
 
 #define USE_FULL_ASSERT
-#define LED_PORT  GPIOC
-#define LED_PIN  GPIO_Pin_13
+
+FATFS FatFs;		/* FatFs work area needed for each volume */
+FIL Fil;			/* File object needed for each open file */
+UINT bw;
+FRESULT fr;
 
 
 int main()
@@ -60,59 +65,35 @@ int main()
     ST7735_backlight(1);
     uart_puts("LCD Backlight ON.",USART1);
 
-    // Get onboard LED initialized.
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = LED_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(LED_PORT, &GPIO_InitStructure);
-    GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
-
     // Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
     {
         while(1);
     }
-    
-    static uint8_t ledval = 0; //LED blinking is just reassuring / sign of life 
 
+    // start LED
+    init_onboard_led();
 
     //MAIN LOOP
     while (1) 
     {
-        //ledval toggle 
-        ledval = 1-ledval;
-        f_mount(0, &Fatfs);/* Register volume work area */
-        uart_puts("Opening an existing file (message.txt)");
-        rc = f_open (&Fil , "MESSAGE.TXT", FA_READ);
-        if (!rc) {
-            xprintf("\nType the file content .\n");
-            for (;;) {
-            /* Read a chunk of file */
-            rc = f_read (&Fil , Buff , sizeof Buff , &br);
-            if (rc || !br) break;/* Error or end of file */
-            for (i = 0; i < br; i++)/* Type the data */
-                myputchar(Buff[i]);
-            }
-            if (rc) die(rc);
-            xprintf("\nClose the file.\n");
-            rc = f_close (&Fil);
-            if (rc) die(rc);
-        }
-        xprintf("\nCreate a new file (hello.txt).\n");
-        rc = f_open (&Fil , "HELLO.TXT", FA_WRITE | FA_CREATE_ALWAYS);
-        if (rc) die(rc);
-        xprintf("\nWrite a text data. (Hello world !)\n");
-        rc = f_write (&Fil , "Hello world !\r\n", 14, &bw);
-        if (rc) die(rc);
-        xprintf("%u bytes written .\n", bw);
+        uart_puts("Opening an existing file (message.txt)", USART1);
+	    f_mount(&FatFs, "", 0);		/* Give a work area to the default drive */
 
+	    fr = f_open(&Fil, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
+	    
+        if (fr == FR_OK) 
+        {
+		    f_write(&Fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
+		    fr = f_close(&Fil);							/* Close the file */
+		    if (fr == FR_OK && bw == 11) 
+            { /* Lights onboard LED if data written well */
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+                Delay(2000); //let hold for 2 seconds 
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
 
-        //sign of life
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, (ledval) ? Bit_SET : Bit_RESET); //blink
-        Delay(1000);
-        
+		    }
+	}
     }
 
    return(0);
