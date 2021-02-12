@@ -333,3 +333,4 @@ Exercise8-ffsample/win32/ffdev.vcproj
 Exercise8-ffsample/win32/ffsystem.c
 Exercise8-ffsample/win32/ffunicode.c
 Exercise8-ffsample/win32/main.c
+.vscode/settings.json
