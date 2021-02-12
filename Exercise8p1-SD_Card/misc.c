@@ -29,3 +29,15 @@ void SysTick_Handler(void)
         TimingDelay--;
     }
 }
+
+//initialize onboard LED (sign of life)
+void init_onboard_led(void)
+{
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = LED_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(LED_PORT, &GPIO_InitStructure);
+    GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
+}
