@@ -10,7 +10,7 @@
 #include "uart.h"
 #include "spi.h"
 #include "LCD7735R.h"
-#include "misc.h"
+#include "setup_main.h"
 #include "ff.h"
 
 /*

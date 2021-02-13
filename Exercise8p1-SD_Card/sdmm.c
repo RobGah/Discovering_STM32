@@ -41,7 +41,7 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
 #include "spi.h"
-#include "misc.h"
+#include "setup_main.h"
 
 //define chip select for the SD on the LCD board
 #define GPIO_Pin_CS GPIO_Pin_6
@@ -214,7 +214,7 @@ int select (void)	/* 1:OK, 0:Timeout */
 {
 	BYTE d;
 
-	GPIOResetBits(GPIOC, GPIO_Pin_CS);				/* Set CS# low */
+	GPIO_ResetBits(GPIOC, GPIO_Pin_CS);				/* Set CS# low */
 	rcvr_mmc(&d, 1);	/* Dummy clock (force DO enabled) */
 	if (wait_ready()) return 1;	/* Wait for card ready */
 
