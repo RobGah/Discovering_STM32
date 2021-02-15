@@ -7,6 +7,7 @@
 #include "glcdfont.h"
 #include <string.h>
 #include <stdbool.h>
+#include "setup_main.h"
 
 /*
 

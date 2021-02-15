@@ -12,6 +12,7 @@
 #include "LCD7735R.h"
 #include "setup_main.h"
 #include "ff.h"
+#include "xprintf.h"
 
 /*
 
@@ -54,16 +55,31 @@ FIL Fil;			/* File object needed for each open file */
 UINT bw;
 FRESULT fr;
 
+//xprintf support
+void myputchar(unsigned char c)
+{
+    uart_putc(c, USART1);
+}
+unsigned char mygetchar ()
+{
+    return uart_getc(USART1);
+}
+
+
 
 int main()
 {
+    //setup xprintf
+    xdev_in(mygetchar); 
+    xdev_out(myputchar);
+
       //uart port opened for debugging
     uart_open(USART1,9600);
-    uart_puts("UART is Live.",USART1);
+    xprintf("UART is Live.\r\n");
     ST7735_init();
-    uart_puts("ST7735 Initialized.",USART1);
+    xprintf("ST7735 Initialized.\r\n");
     ST7735_backlight(1);
-    uart_puts("LCD Backlight ON.",USART1);
+    xprintf("LCD Backlight ON.\r\n");
 
     // Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
@@ -73,19 +89,25 @@ int main()
 
     // start LED
     init_onboard_led();
-
+    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
     //MAIN LOOP
     while (1) 
     {
-        uart_puts("Opening an existing file (message.txt)", USART1);
-	    f_mount(&FatFs, "", 0);		/* Give a work area to the default drive */
-
+        xprintf("Mounting drive\r\n");
+	    fr = f_mount(&FatFs, "", 0);		/* Give a work area to the default drive */
+        xprintf("f_mount completed and returned %d.\r\n",fr);
+        xprintf("Creating newfile...\r\n");
 	    fr = f_open(&Fil, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */
-	    
+        xprintf("f_open completed and returned %d\r\n",fr);
         if (fr == FR_OK) 
         {
-		    f_write(&Fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
-		    fr = f_close(&Fil);							/* Close the file */
+            xprintf("Writing in file...\r\n");
+		    fr=f_write(&Fil, "It works!\r\n", 11, &bw);	/* Write data to the file */
+		    xprintf("f_write completed and returned %d\r\n",fr);
+            xprintf("Closing file...\r\n");
+            fr = f_close(&Fil);							/* Close the file */
+            xprintf("f_close completed and returned %d.\r\n",fr);
+
 		    if (fr == FR_OK && bw == 11) 
             { /* Lights onboard LED if data written well */
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
@@ -93,9 +115,9 @@ int main()
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
 
 		    }
-	}
+	    }
+        for(;;);
     }
-
    return(0);
 }
 
