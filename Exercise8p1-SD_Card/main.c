@@ -94,7 +94,7 @@ int main()
     while (1) 
     {
         xprintf("Mounting drive\r\n");
-	    fr = f_mount(&FatFs, "", 0);		/* Give a work area to the default drive */
+	    fr = f_mount(&FatFs, "", 1);		/* Give a work area to the default drive */
         xprintf("f_mount completed and returned %d.\r\n",fr);
         xprintf("Creating newfile...\r\n");
 	    fr = f_open(&Fil, "newfile.txt", FA_WRITE | FA_CREATE_ALWAYS);	/* Create a file */

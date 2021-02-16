@@ -214,7 +214,7 @@ int select (void)	/* 1:OK, 0:Timeout */
 {
 	BYTE d;
 
-	GPIO_ResetBits(GPIOC, GPIO_Pin_CS);				/* Set CS# low */
+	GPIO_ResetBits(GPIO_CS, GPIO_Pin_CS);				/* Set CS# low */
 	rcvr_mmc(&d, 1);	/* Dummy clock (force DO enabled) */
 	if (wait_ready()) return 1;	/* Wait for card ready */
 
@@ -374,7 +374,11 @@ DSTATUS disk_initialize (
 	spiInit(SPI2);							/* Initialize SPI */
 
 	// assuming "INIT_PORT" was supposed to do this here
+	//NO IDEA why the original code uses CS_INIT 2x but I did it here and we have working firmware.
 	csInit(GPIO_CS,GPIO_Pin_CS);			/* Initialize CS*/
+	GPIO_SetBits(GPIO_CS,GPIO_Pin_CS); //set CS High
+	csInit(GPIO_CS,GPIO_Pin_CS);	// Seems like it NEEDS TO BE HERE. Strange!
+	GPIO_ResetBits(GPIO_CS,GPIO_Pin_CS); //set CS low
 	deselect();								/* Set CS and DI/DO high? MIGHT REMOVE if problems*/
 
 	// DEFAULT CODE FOR INIT STUFF
