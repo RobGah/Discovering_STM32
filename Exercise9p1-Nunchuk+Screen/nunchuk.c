@@ -45,9 +45,10 @@ void nunchuk_init(I2C_TypeDef *I2C,int I2C_Speed, uint8_t I2C_address)
     xprintf("Initializing I2C w/ Nunchuk...");
     I2C_LowLevel_Init(I2C,I2C_Speed, I2C_address); 
     status = I2C_Write(I2C , buf_init1 , 2, I2C_address);
-    xprintf("Write of %x and %x to Nunchuk returned %d", buf_init1[0],buf_init1[1],status);
+    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init1[0],buf_init1[1],status);
     status = I2C_Write(I2C , buf_init2 , 2, I2C_address);
-    xprintf("Write of %x and %x to Nunchuk returned %d", buf_init2[0],buf_init2[1],status);
+    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init2[0],buf_init2[1],status);
+    Delay(1000);
 }
 
 static uint8_t * read_raw_nunchuk_data(I2C_TypeDef *I2C, uint8_t I2C_address)
@@ -126,9 +127,9 @@ void report_nunchuk_data(I2C_TypeDef * I2C, uint8_t I2C_address)
     xprintf("Accel y: %d milliG's.\r\n", accel_y_millig);
     xprintf("Accel z: %d milliG's.\r\n", accel_z_millig);
     xprintf("Joystick x: %d ticks.\r\n", joystick_x);
-    xprintf("Joystick y: %d ticks\r\n",  joystick_y);
-    xprintf("C Button: %s\r\n", c_button ? "TRUE":"FALSE");
-    xprintf("Z Button: %s\r\n", z_button ? "TRUE":"FALSE");
+    xprintf("Joystick y: %d ticks.\r\n",  joystick_y);
+    xprintf("C Button: %s.\r\n", c_button ? "TRUE":"FALSE");
+    xprintf("Z Button: %s.\r\n", z_button ? "TRUE":"FALSE");
 }
 
 
