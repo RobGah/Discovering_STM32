@@ -3,7 +3,7 @@
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
 
-#include "I2C.h"
+#include "i2c.h"
 
 #define Timed(x) Timeout = 0xFFFF; while (x) { if (Timeout-- == 0) goto errReturn;}
 
