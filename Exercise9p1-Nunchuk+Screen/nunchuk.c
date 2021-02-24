@@ -14,7 +14,8 @@
 #include "LCD7735R.h"
 #include "setup_main.h"
 #include "xprintf.h"
-#include "i2c.h"
+//#include "i2c.h"
+#include "I2CRoutines.h"
 
 #define ACCEL_LOWER_BOUND 0
 #define ACCEL_UPPER_BOUND 1023
@@ -23,8 +24,8 @@
 #define MILLIG_UPPER_BOUND 2000
 
 //initial writes to start comms w/ nunchuk
-const static uint8_t buf_init1[] = {0xf0, 0x55}; 
-const static uint8_t buf_init2[] = {0xfb, 0x00};
+const static uint8_t buf_init1[2] = {0xF0, 0x55}; 
+const static uint8_t buf_init2[2] = {0xFB, 0x00};
 
 uint8_t raw_data[6];
 uint8_t joystick_x;
@@ -38,24 +39,27 @@ uint16_t accel_z_millig;
 bool c_button;
 bool z_button;
 
-void nunchuk_init(I2C_TypeDef *I2C,int I2C_Speed, uint8_t I2C_address)
+void nunchuk_init(I2C_TypeDef *I2C, int I2C_Speed, uint8_t I2C_address)
 {
     Status status;
     //Initialize 'chuk
-    xprintf("Initializing I2C w/ Nunchuk...");
-    I2C_LowLevel_Init(I2C,I2C_Speed, I2C_address); 
-    status = I2C_Write(I2C , buf_init1 , 2, I2C_address);
-    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init1[0],buf_init1[1],status);
-    status = I2C_Write(I2C , buf_init2 , 2, I2C_address);
-    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init2[0],buf_init2[1],status);
+    xprintf("Initializing I2C w/ Nunchuk...\r\n");
     Delay(1000);
+    I2C_LowLevel_Init(I2C);
+    Delay(20); 
+    status = I2C_Master_BufferWrite(I2C , buf_init1 , 2, Polling, I2C_address);
+    Delay(20); //slight delay?
+    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init1[0],buf_init1[1],status);
+    status = I2C_Master_BufferWrite(I2C , buf_init2 , 2, Polling, I2C_address);
+    xprintf("Write of %x and %x to Nunchuk returned %d.\r\n", buf_init2[0],buf_init2[1],status);
+    Delay(20);
 }
 
 static uint8_t * read_raw_nunchuk_data(I2C_TypeDef *I2C, uint8_t I2C_address)
 {
     uint8_t nunchuk_data[6];
-    I2C_Write(I2C, 0, 1, I2C_address); //send it a 0 to start read
-    I2C_Read(I2C,nunchuk_data,6,I2C_address);//scoop up 6 bytes
+   //I2C_Master_BufferWrite(I2C,0x00,1,Polling,I2C_address);//0x00 written to start comms
+    I2C_Master_BufferRead(I2C,nunchuk_data,6,Polling,I2C_address);//scoop up 6 bytes
 
     return nunchuk_data;
 }

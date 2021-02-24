@@ -12,7 +12,8 @@
 #include "LCD7735R.h"
 #include "setup_main.h"
 #include "xprintf.h"
-#include "i2c.h"
+//#include "i2c.h"
+#include "I2CRoutines.h"
 #include "nunchuk.h"
 /*
 
@@ -101,7 +102,7 @@ int main()
     xprintf("LCD Backlight ON.\r\n");
 
    //Initialize 'chuk
-   nunchuk_init(I2C1,10000,NUNCHUK_ADDRESS);
+   nunchuk_init(I2C2,100000,NUNCHUK_ADDRESS);
 
 
     // start LED
@@ -116,7 +117,7 @@ int main()
     {
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, ledval? Bit_SET: Bit_RESET);
         //basic sign of life test for nunchuk reads
-        report_nunchuk_data(I2C1,NUNCHUK_ADDRESS);
+        report_nunchuk_data(I2C2,NUNCHUK_ADDRESS);
         ledval= 1-ledval;
         Delay(500);
     }
