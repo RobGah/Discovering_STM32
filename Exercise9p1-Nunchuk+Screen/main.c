@@ -102,7 +102,7 @@ int main()
     xprintf("LCD Backlight ON.\r\n");
 
    //Initialize 'chuk
-   nunchuk_init(I2C2,100000,NUNCHUK_ADDRESS);
+   nunchuk_init(NUNCHUK_ADDRESS);
 
 
     // start LED
