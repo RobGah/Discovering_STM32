@@ -12,8 +12,6 @@
 #include "LCD7735R.h"
 #include "setup_main.h"
 #include "xprintf.h"
-//#include "i2c.h"
-#include "I2CRoutines.h"
 #include "nunchuk.h"
 /*
 
@@ -66,7 +64,11 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /****Variables for I2C init****/
-#define NUNCHUK_ADDRESS 0x52 //book says 0xA4
+#define NUNCHUK_ADDRESS 0xA4 //book says 0xA4
+#define I2C_USED I2C1
+#define I2C_CLOCK 10000 //I2C clock speed
+uint8_t raw_data_buffer[6]; //buffer for chuk data
+
 /****xprintf support****/
 void myputchar(unsigned char c)
 {
@@ -101,8 +103,8 @@ int main()
     ST7735_backlight(1);
     xprintf("LCD Backlight ON.\r\n");
 
-   //Initialize 'chuk
-   nunchuk_init(NUNCHUK_ADDRESS);
+    //Initialize 'chuk
+    nunchuk_init(I2C_USED, I2C_CLOCK, NUNCHUK_ADDRESS);
 
 
     // start LED
@@ -117,7 +119,7 @@ int main()
     {
         GPIO_WriteBit(GPIOC, GPIO_Pin_13, ledval? Bit_SET: Bit_RESET);
         //basic sign of life test for nunchuk reads
-        report_nunchuk_data(I2C2,NUNCHUK_ADDRESS);
+        report_nunchuk_data(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
         ledval= 1-ledval;
         Delay(500);
     }
