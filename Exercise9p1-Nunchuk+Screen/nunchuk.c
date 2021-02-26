@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "uart.h"
+#include <math.h>
 #include "spi.h"
 #include "LCD7735R.h"
 #include "setup_main.h"
@@ -33,9 +34,9 @@ uint8_t joystick_y;
 uint16_t accel_x_raw;
 uint16_t accel_y_raw;
 uint16_t accel_z_raw;
-int accel_x_millig;
-int accel_y_millig;
-int accel_z_millig;
+float accel_x_millig;
+float accel_y_millig;
+float accel_z_millig;
 bool c_button;
 bool z_button;
 
@@ -57,12 +58,10 @@ void nunchuk_init(I2C_TypeDef *I2C, int I2CClockSpeed, uint8_t I2C_address)
 void read_raw_nunchuk_data(I2C_TypeDef *I2C, uint8_t I2C_address, uint8_t *data)
 {
     status = I2C_Write(I2C,0x00,1,I2C_address);//0x00 written to start comms
-    xprintf("I2C Read initiation write %d returned %d\r\n", 0x00,status);
+    xprintf("I2C Read initiation write %d returned %d\r\n", 0,status);
     Delay(50); //give it some time to get its act together
     status = I2C_Read(I2C,data,6,I2C_address);//scoop up 6 bytes
     xprintf("I2C Read routine returned %d\r\n", status);
-
-
 }
 
 
@@ -85,9 +84,9 @@ static void parse_raw_nunchuk_data(uint8_t *data)
         d) OR the shifted 8-bit accel value to the 2 least significant bits. 
         e) congrats, we have a 10 bit value!
     */
-    accel_x_raw = (data[2]<<2) | ((data[5]&0x0C)>>2);
-    accel_y_raw = (data[3]<<2) | ((data[5]&0x30)>>4);
-    accel_z_raw = (data[4]<<2) | ((data[5]&0xC0)>>6);
+    accel_x_raw = (data[2]<<2) | ((data[5]&0x0C)>>2); //00001100 mask
+    accel_y_raw = (data[3]<<2) | ((data[5]&0x30)>>4); //00110000 mask
+    accel_z_raw = (data[4]<<2) | ((data[5]&0xC0)>>6); //11000000 mask
 
     //Same deal, mask (AND) out all other bits except the one of interest
     //then do a cute inline if
@@ -96,7 +95,7 @@ static void parse_raw_nunchuk_data(uint8_t *data)
     z_button = ((data[5]&0x01) ? false:true);
 }
 
- static int map(uint16_t x, uint16_t in_min, uint16_t in_max, 
+ static int map(int x, int in_min, int in_max, 
     int out_min, int out_max) 
     {
     /*
@@ -107,10 +106,11 @@ static void parse_raw_nunchuk_data(uint8_t *data)
     adapted from:
     //https://www.arduino.cc/reference/en/language/functions/math/map/
     */
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        return round(((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min));
+        //this checks out in excel 
     }   
 
-static void convert_raw_accel_to_millig(uint8_t accel_x ,uint8_t accel_y,uint8_t accel_z)
+static void convert_raw_accel_to_millig(uint16_t accel_x ,uint16_t accel_y,uint16_t accel_z)
 {
     accel_x_millig = map(accel_x, ACCEL_LOWER_BOUND, ACCEL_UPPER_BOUND, 
     MILLIG_LOWER_BOUND, MILLIG_UPPER_BOUND);
@@ -126,14 +126,14 @@ void report_nunchuk_data(I2C_TypeDef * I2C, uint8_t I2C_address, uint8_t *data)
 {
     read_raw_nunchuk_data(I2C, I2C_address, data);
     parse_raw_nunchuk_data(data);
-    //convert_raw_accel_to_millig(accel_x_raw, accel_y_raw, accel_z_raw);
+    convert_raw_accel_to_millig(accel_x_raw, accel_y_raw, accel_z_raw);
 
     xprintf("\r\nNunchuk reads... \r\n\r\n");
-    xprintf("Accel x: %u bits.\r\n", accel_x_raw);
-    xprintf("Accel y: %u bits.\r\n", accel_y_raw);
-    xprintf("Accel z: %u bits.\r\n", accel_z_raw);
+    xprintf("Accel x: %6f in mG.\r\n", accel_z_millig);
+    xprintf("Accel y: %6f in mG.\r\n", accel_y_millig);
+    xprintf("Accel z: %6f in mG.\r\n", accel_z_millig);
     xprintf("Joystick x: %d ticks.\r\n", joystick_x);
-    xprintf("Joystick y: %d ticks.\r\n",  joystick_y);
+    xprintf("Joystick y: %d ticks.\r\n", joystick_y);
     xprintf("C Button: %s.\r\n", c_button ? "TRUE":"FALSE");
     xprintf("Z Button: %s.\r\n", z_button ? "TRUE":"FALSE");
 }

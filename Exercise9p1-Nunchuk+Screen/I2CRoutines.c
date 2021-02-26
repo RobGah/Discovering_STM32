@@ -19,13 +19,14 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "I2CRoutines.h"
+#include <stm32f10x_dma.h>
 #include <stm32f10x.h>
-#include <stm32f10x_i2c.h>
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
-#include <stm32f10x_dma.h>
-#include "I2CRoutines.h"
-
+#include <stm32f10x_spi.h>
+#include <stm32f10x_usart.h>
+#include <stm32f10x_i2c.h>
 
 /** @addtogroup Optimized I2C examples
   * @{
@@ -572,7 +573,7 @@ void I2C_LowLevel_Init(I2C_TypeDef* I2Cx)
         RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
         /* I2C1 SDA and SCL configuration */
         GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; 
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
         GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
         GPIO_Init(GPIOB, &GPIO_InitStructure);
 

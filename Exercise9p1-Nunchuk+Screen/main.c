@@ -64,7 +64,7 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /****Variables for I2C init****/
-#define NUNCHUK_ADDRESS 0xA4 //book says 0xA4
+#define NUNCHUK_ADDRESS 0xA4 //book says 0xA4, internet says 0x52...A4 WORKS THO
 #define I2C_USED I2C1
 #define I2C_CLOCK 10000 //I2C clock speed
 uint8_t raw_data_buffer[6]; //buffer for chuk data
