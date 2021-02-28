@@ -71,7 +71,7 @@ GND     GND         GND
 /****Variables for I2C init****/
 #define NUNCHUK_ADDRESS 0xA4 //book says 0xA4, internet says 0x52...A4 WORKS THO
 #define I2C_USED I2C1
-#define I2C_CLOCK 10000 //I2C clock speed
+#define I2C_CLOCK 100000 //I2C clock speed
 uint8_t raw_data_buffer[6]; //buffer for chuk data
 
 /****xprintf support****/
@@ -135,8 +135,9 @@ int main()
         #endif
 
         #ifdef SCREEN_CURSOR_TEST
+            //there is an inherent 5ms delay built into the read function
+            //for raw chuk data. Therefore our refresh rate is 200Hz.
             update_cursors_on_screen(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
-            Delay(5); //give everything a bit of time to update 
         #endif
     }
    return(0);

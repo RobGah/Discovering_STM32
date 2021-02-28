@@ -40,10 +40,10 @@ int scaled_cursor_data[4];
 #define ACCEL_CURSOR_COLOR      GREEN
 #define BGCOLOR                 BLACK
 
-#define SCALE_X_JOY     ((float)255/(float)ST7735_HEIGHT)
-#define SCALE_Y_JOY     ((float)255/(float)ST7735_WIDTH)
-#define SCALE_X_ACCEL   ((float)1023/(float)ST7735_HEIGHT)
-#define SCALE_Y_ACCEL   ((float)1023/(float)ST7735_WIDTH)
+#define SCALE_X_JOY     ((float)255/(float)ST7735_WIDTH)
+#define SCALE_Y_JOY     ((float)255/(float)ST7735_HEIGHT)
+#define SCALE_X_ACCEL   ((float)1023/(float)ST7735_WIDTH)
+#define SCALE_Y_ACCEL   ((float)1023/(float)ST7735_HEIGHT)
 
 static void convert_nunchuk_input_to_screen_position(void)
 {
@@ -57,10 +57,11 @@ static void convert_nunchuk_input_to_screen_position(void)
     first two retval array positions = joy x/y
     last two retval array positions = accel x/y
     */
-    scaled_cursor_data[0] = (int)(round(((float)joystick_x/SCALE_X_JOY)-10));
-    scaled_cursor_data[1] = (int)(round(((float)joystick_y/SCALE_Y_JOY)-7));
-    scaled_cursor_data[2] = (int)(round(((float)accel_x_raw/SCALE_X_ACCEL)-10));
-    scaled_cursor_data[3] = (int)(round(((float)accel_y_raw/SCALE_Y_ACCEL)-7));
+    joystick_y = 255-joystick_y; // 0 is joystick "up" and 255 is joystick "down"
+    scaled_cursor_data[0] = (int)(round(((float)joystick_x/SCALE_X_JOY)-7));
+    scaled_cursor_data[1] = (int)(round(((float)joystick_y/SCALE_Y_JOY)-10));
+    scaled_cursor_data[2] = (int)(round(((float)accel_x_raw/SCALE_X_ACCEL)-7));
+    scaled_cursor_data[3] = (int)(round(((float)accel_y_raw/SCALE_Y_ACCEL)-10));
 
     //prevent negative screen positions from occurring
     for(int i=0; i<4;i++)
@@ -115,8 +116,8 @@ void update_cursors_on_screen(I2C_TypeDef *I2C, uint8_t I2C_address,uint8_t *dat
     if((cursor_char_c !=prev_char_c) | (scaled_cursor_data[0] != prev_joyx) 
         | (scaled_cursor_data[1] != prev_joyy))
         {
-            ST7735_drawChar(prev_char_c,BGCOLOR, BGCOLOR,prev_joyx,prev_joyy);
-            ST7735_drawChar(cursor_char_c,JOY_CURSOR_COLOR,BGCOLOR,scaled_cursor_data[0],scaled_cursor_data[1]);
+            ST7735_drawChar(prev_char_c,BGCOLOR, BGCOLOR,prev_joyy,prev_joyx);
+            ST7735_drawChar(cursor_char_c,JOY_CURSOR_COLOR,BGCOLOR,scaled_cursor_data[1],scaled_cursor_data[0]);
 
             //update prev vals to current vals
             prev_joyx = scaled_cursor_data[0];
@@ -126,8 +127,8 @@ void update_cursors_on_screen(I2C_TypeDef *I2C, uint8_t I2C_address,uint8_t *dat
     if((cursor_char_z !=prev_char_z) | (scaled_cursor_data[2] != prev_accelx) 
         | (scaled_cursor_data[3] != prev_accely))
         {
-            ST7735_drawChar(prev_char_z,BGCOLOR, BGCOLOR,prev_accelx,prev_accely);
-            ST7735_drawChar(cursor_char_z,ACCEL_CURSOR_COLOR,BGCOLOR,scaled_cursor_data[2],scaled_cursor_data[3]);
+            ST7735_drawChar(prev_char_z,BGCOLOR, BGCOLOR,prev_accely,prev_accelx);
+            ST7735_drawChar(cursor_char_z,ACCEL_CURSOR_COLOR,BGCOLOR,scaled_cursor_data[3],scaled_cursor_data[2]);
             prev_accelx = scaled_cursor_data[2];
             prev_accely = scaled_cursor_data[3];
             prev_char_z = cursor_char_z;
