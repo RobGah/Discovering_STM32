@@ -16,30 +16,23 @@
 #include "setup_main.h"
 #include "xprintf.h"
 #include "i2c.h"
-//#include "I2CRoutines.h"
-
-#define ACCEL_LOWER_BOUND 0
-#define ACCEL_UPPER_BOUND 1023
-
-#define MILLIG_LOWER_BOUND -2000
-#define MILLIG_UPPER_BOUND 2000
+#include "nunchuk.h"
+//#include "I2CRoutines.h" <-This is what the book's i2c.c/h is based on
 
 //initial writes to start comms w/ nunchuk
-const uint8_t buf_init1[2] = {0xF0, 0x55}; 
-const uint8_t buf_init2[2] = {0xFB, 0x00};
+static const uint8_t buf_init1[2] = {0xF0, 0x55}; 
+static const uint8_t buf_init2[2] = {0xFB, 0x00};
 Status status; //generic retval from i2c operations
 
-uint8_t joystick_x;
-uint8_t joystick_y;
-uint16_t accel_x_raw;
-uint16_t accel_y_raw;
-uint16_t accel_z_raw;
-float accel_x_millig;
-float accel_y_millig;
-float accel_z_millig;
-bool c_button;
-bool z_button;
+/*math stuff*/
+#define RATIO_BITS_TO_GS ((float)MILLIG_DYNAMIC_RANGE/(float)ACCEL_BITS)
 
+//nunchuk variables
+int accel_x_millig;
+int accel_y_millig;
+int accel_z_millig;
+
+//public 'chuk init function.
 void nunchuk_init(I2C_TypeDef *I2C, int I2CClockSpeed, uint8_t I2C_address)
 {
     //Initialize 'chuk
@@ -55,16 +48,18 @@ void nunchuk_init(I2C_TypeDef *I2C, int I2CClockSpeed, uint8_t I2C_address)
     Delay(20);
 }
 
-void read_raw_nunchuk_data(I2C_TypeDef *I2C, uint8_t I2C_address, uint8_t *data)
+
+//private nunchuk data packet read function
+static void read_raw_nunchuk_data(I2C_TypeDef *I2C, uint8_t I2C_address, uint8_t *data)
 {
     status = I2C_Write(I2C,0x00,1,I2C_address);//0x00 written to start comms
     xprintf("I2C Read initiation write %d returned %d\r\n", 0,status);
-    Delay(50); //give it some time to get its act together
+    Delay(5); //give it some time to get its act together
     status = I2C_Read(I2C,data,6,I2C_address);//scoop up 6 bytes
     xprintf("I2C Read routine returned %d\r\n", status);
 }
 
-
+//private parsing function for nunchuk data
 static void parse_raw_nunchuk_data(uint8_t *data)
 {
     //the easy stuff
@@ -90,53 +85,53 @@ static void parse_raw_nunchuk_data(uint8_t *data)
 
     //Same deal, mask (AND) out all other bits except the one of interest
     //then do a cute inline if
-    //if the value is 1, bool is true, else is false
+    //if the value is 1, bool is false, else is true (this is how my chuk behaves, YMMV)
     c_button = (((data[5]&0x02)>>1) ? false:true); 
     z_button = ((data[5]&0x01) ? false:true);
 }
-
- static int map(int x, int in_min, int in_max, 
-    int out_min, int out_max) 
-    {
-    /*
-    Takes in some value within some range and 
-    maps it proportionally to a new range.
-    Here we use it to convert 0-1023 to -2000 to 2000millig's
-
-    adapted from:
-    //https://www.arduino.cc/reference/en/language/functions/math/map/
-    */
-        return round(((x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min));
-        //this checks out in excel 
-    }   
-
+ 
+//private conversion function of bits ->mG's
 static void convert_raw_accel_to_millig(uint16_t accel_x ,uint16_t accel_y,uint16_t accel_z)
 {
-    accel_x_millig = map(accel_x, ACCEL_LOWER_BOUND, ACCEL_UPPER_BOUND, 
-    MILLIG_LOWER_BOUND, MILLIG_UPPER_BOUND);
+    /* This is a scale and offset operation - not crazy necessary for this project but its cool to see
+    1. Scale the raw accel value by the ratio of dynamic range/bits or "Bits to G's" conversion ratio
+    2. Offset (i.e. subtract) half the total dynamic range of the accelerometer to get +/-2g value
+    3. Round to the nearest whole number and cast as an int to make life easy
+    */
 
-    accel_y_millig = map(accel_y, ACCEL_LOWER_BOUND, ACCEL_UPPER_BOUND, 
-    MILLIG_LOWER_BOUND, MILLIG_UPPER_BOUND);
+    accel_x_millig = (int)round(RATIO_BITS_TO_GS*accel_x_raw)-(MILLIG_DYNAMIC_RANGE/2);
+    accel_y_millig = (int)round(RATIO_BITS_TO_GS*accel_y_raw)-(MILLIG_DYNAMIC_RANGE/2);
+    accel_z_millig = (int)round(RATIO_BITS_TO_GS*accel_z_raw)-(MILLIG_DYNAMIC_RANGE/2);
 
-    accel_z_millig = map(accel_z, ACCEL_LOWER_BOUND, ACCEL_UPPER_BOUND, 
-    MILLIG_LOWER_BOUND, MILLIG_UPPER_BOUND);
 }
 
-void report_nunchuk_data(I2C_TypeDef * I2C, uint8_t I2C_address, uint8_t *data)
+//public function to update nunchuk data in the variables
+void update_nunchuck_data(I2C_TypeDef *I2C, uint8_t I2C_address,uint8_t *data)
 {
     read_raw_nunchuk_data(I2C, I2C_address, data);
     parse_raw_nunchuk_data(data);
+}
+
+//public function to print out nunchuk data over UART
+//expresses accel in mG's but easy to express it in 0-1023 (10bits) w/ tweaking if needed
+void report_nunchuk_data(I2C_TypeDef * I2C, uint8_t I2C_address, uint8_t *data)
+{
+    update_nunchuck_data(I2C,I2C_address,data);
+
+    //do the conversion of bits -> mG's
     convert_raw_accel_to_millig(accel_x_raw, accel_y_raw, accel_z_raw);
 
+    //print out all nunchuck variables
     xprintf("\r\nNunchuk reads... \r\n\r\n");
-    xprintf("Accel x: %6f in mG.\r\n", accel_z_millig);
-    xprintf("Accel y: %6f in mG.\r\n", accel_y_millig);
-    xprintf("Accel z: %6f in mG.\r\n", accel_z_millig);
+    xprintf("Accel x: %d in mG.\r\n", accel_z_millig);
+    xprintf("Accel y: %d in mG.\r\n", accel_y_millig);
+    xprintf("Accel z: %d in mG.\r\n", accel_z_millig);
     xprintf("Joystick x: %d ticks.\r\n", joystick_x);
     xprintf("Joystick y: %d ticks.\r\n", joystick_y);
     xprintf("C Button: %s.\r\n", c_button ? "TRUE":"FALSE");
     xprintf("Z Button: %s.\r\n", z_button ? "TRUE":"FALSE");
 }
+
 
 
 

@@ -13,6 +13,7 @@
 #include "setup_main.h"
 #include "xprintf.h"
 #include "nunchuk.h"
+#include "screencursors.h"
 /*
 
 Setup:
@@ -63,6 +64,10 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
+/*SELECT A TEST by commenting / uncommenting these defs*/
+//#define SIGN_OF_LIFE_TEST
+#define SCREEN_CURSOR_TEST
+
 /****Variables for I2C init****/
 #define NUNCHUK_ADDRESS 0xA4 //book says 0xA4, internet says 0x52...A4 WORKS THO
 #define I2C_USED I2C1
@@ -97,31 +102,42 @@ int main()
     uart_open(USART1,9600);
     xprintf("UART is Live.\r\n");
     
-    //Initialize ST7735 Screen.
-    ST7735_init();
-    xprintf("ST7735 Initialized.\r\n");
-    ST7735_backlight(1);
-    xprintf("LCD Backlight ON.\r\n");
+    #ifdef SIGN_OF_LIFE_TEST
+        //Initialize ST7735 Screen.
+        ST7735_init();
+        xprintf("ST7735 Initialized.\r\n");
+        ST7735_backlight(1);
+        xprintf("LCD Backlight ON.\r\n");
 
-    //Initialize 'chuk
-    nunchuk_init(I2C_USED, I2C_CLOCK, NUNCHUK_ADDRESS);
+        //Initialize 'chuk
+        nunchuk_init(I2C_USED, I2C_CLOCK, NUNCHUK_ADDRESS);
+    #endif
 
+    #ifdef SCREEN_CURSOR_TEST
+        init_screencursor_peripherals(I2C_USED,I2C_CLOCK,NUNCHUK_ADDRESS);
+    #endif
 
     // start LED
     init_onboard_led();
     GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
     bool ledval = false;
 
-    /*SELECT A TEST by commenting / uncommenting these defs*/
     
     //MAIN LOOP
     while (1) 
     {
-        GPIO_WriteBit(GPIOC, GPIO_Pin_13, ledval? Bit_SET: Bit_RESET);
-        //basic sign of life test for nunchuk reads
-        report_nunchuk_data(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
-        ledval= 1-ledval;
-        Delay(500);
+        #ifdef SIGN_OF_LIFE_TEST
+            GPIO_WriteBit(GPIOC, GPIO_Pin_13, ledval? Bit_SET: Bit_RESET);
+            //basic sign of life test for nunchuk reads
+            report_nunchuk_data(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
+            ledval= 1-ledval;
+            Delay(500);
+        #endif
+
+        #ifdef SCREEN_CURSOR_TEST
+            update_cursors_on_screen(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
+            Delay(5); //give everything a bit of time to update 
+        #endif
     }
    return(0);
 }
