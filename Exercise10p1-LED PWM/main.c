@@ -4,6 +4,7 @@
 #include <stm32f10x_spi.h>
 #include <stm32f10x_usart.h>
 #include <stm32f10x_i2c.h>
+#include <stm32f10x_tim.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -12,8 +13,8 @@
 #include "LCD7735R.h"
 #include "setup_main.h"
 #include "xprintf.h"
-#include "nunchuk.h"
-#include "screencursors.h"
+#include "timers.h"
+
 /*
 
 Setup:
@@ -32,25 +33,10 @@ LCD CS  PA5         LCD Select
 SD_CS   PA6         SD card Select
 GND     GND         Ground
 
-Wii Nunchuk is connected to STM32 by way of:
-Line    Nunchuk     STM32
-3.3V    +           3.3V
-GND     -           GND
-Clock   c           PB6
-Data    d           PB7
-
-This is effectively I2C1. 
-I2C 2 is also possible and could PB6 -> PB10 and PB7->PB11
-
-
-Some notes:
--Embarassing, but I finally realized that the Library subfolder has many of these
-    modules that the author lists in the book pre-defined and ready for fill-in-the-blank coding.
-    I just took the I2C module verbatim from that subfolder.
-
-To test microSD card / FatFS:
--First, read out the accel/joy/button nunchuck output onto UART / TeraTerm
--Then go about mapping those values to the screen.
+To test:
+-Just run the code - backlight on screen should become increasingly brighter for 2s
+-After 2s, screen should start to dim for 2s
+-Repeats!
 
 For UART Debug, I'm using:
 
@@ -65,14 +51,7 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /*SELECT A TEST by commenting / uncommenting these defs*/
-//#define SIGN_OF_LIFE_TEST
-#define SCREEN_CURSOR_TEST
-
-/****Variables for I2C init****/
-#define NUNCHUK_ADDRESS 0xA4 //book says 0xA4, internet says 0x52...A4 WORKS THO
-#define I2C_USED I2C1
-#define I2C_CLOCK 100000 //I2C clock speed
-uint8_t raw_data_buffer[6]; //buffer for chuk data
+#define LCD_BACKLIGHT_FADE_TEST
 
 /****xprintf support****/
 void myputchar(unsigned char c)
@@ -84,7 +63,9 @@ unsigned char mygetchar ()
     return uart_getc(USART1);
 }
 
-
+//PWM variable
+int pw = 0; //pulse width 0-999
+int ms = 0; //ms count to determine fade in / fade out switchover
 
 int main()
 {
@@ -97,48 +78,56 @@ int main()
     //setup xprintf 
     xdev_in(mygetchar); 
     xdev_out(myputchar);
+    
 
     //uart port opened for debugging
     uart_open(USART1,9600);
     xprintf("UART is Live.\r\n");
     
-    #ifdef SIGN_OF_LIFE_TEST
-        //Initialize ST7735 Screen.
-        ST7735_init();
-        xprintf("ST7735 Initialized.\r\n");
-        ST7735_backlight(1);
-        xprintf("LCD Backlight ON.\r\n");
-
-        //Initialize 'chuk
-        nunchuk_init(I2C_USED, I2C_CLOCK, NUNCHUK_ADDRESS);
-    #endif
-
-    #ifdef SCREEN_CURSOR_TEST
-        init_screencursor_peripherals(I2C_USED,I2C_CLOCK,NUNCHUK_ADDRESS);
-    #endif
+    //init LCD screen
+    ST7735_init(); //n.b. this inits the backlight pin too but we reconfig it later
+    xprintf("ST7735 initialized!\r\n");
+    ST7735_backlight(true);
+    ST7735_fillScreen(GREEN);
+    Delay(1000); //let the screen actually turn full on as an initial sign of life
 
     // start LED
     init_onboard_led();
     GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
-    bool ledval = false;
-
+    bool ledval = false;    
     
+    // GPIOA LCD Backlight config for pwm. 
+    GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    //init timer using books definition, 100hz pwm signal with 0.1% pwm resolution.
+    timer_init(TIM2,RCC_APB1Periph_TIM2,100000,1000,TIM_CounterMode_Up);
+
     //MAIN LOOP
     while (1) 
     {
-        #ifdef SIGN_OF_LIFE_TEST
-            GPIO_WriteBit(GPIOC, GPIO_Pin_13, ledval? Bit_SET: Bit_RESET);
-            //basic sign of life test for nunchuk reads
-            report_nunchuk_data(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
-            ledval= 1-ledval;
-            Delay(500);
-        #endif
-
-        #ifdef SCREEN_CURSOR_TEST
-            //there is an inherent 5ms delay built into the read function
-            //for raw chuk data. Therefore our refresh rate is 200Hz.
-            update_cursors_on_screen(I2C_USED,NUNCHUK_ADDRESS,raw_data_buffer);
-        #endif
+        #ifdef LCD_BACKLIGHT_FADE_TEST
+            if((ms < 2000))
+            {
+                pw++;
+            }
+            else if (ms>=2000)
+            {
+                pw--;
+            }
+            //when we get to 4000ms, reset everything.
+            if (ms==4000)
+            {
+                ms = 0;
+                pw = 0; //pw is -1 due to above
+            }  
+                TIM_SetCompare2(TIM2,pw);
+                Delay(2);//delay 2 ms
+                ms++;
+            #endif
     }
    return(0);
 }

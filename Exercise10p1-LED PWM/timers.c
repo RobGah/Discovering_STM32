@@ -10,19 +10,21 @@
 #include <string.h>
 #include <stdbool.h>
 
-void timer_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div, uint32_t period,uint16_t countermode)
+void timer_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
+     uint32_t period,uint16_t countermode)
 {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef TIM_OCInitStructure;
     // enable timer clock
     RCC_APB1PeriphClockCmd(timerperiph , ENABLE);
-    // configure timer i.e. 
+    // configure timer e.g. 
     // PWM frequency = 100 hz with 24 ,000 ,000 hz system clock
     // 24 ,000 ,000/240 = 100 ,000
     // 100 ,000/1000 = 100
+    // "div" comments below for illustration only - all this is configurable
     TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // i.e. div 240
-    TIM_TimeBaseStructure.TIM_Period = period - 1; // i.e. div 1000
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // e.g. div 240
+    TIM_TimeBaseStructure.TIM_Period = period - 1; // e.g. div 1000
     TIM_TimeBaseStructure.TIM_CounterMode = countermode;
     TIM_TimeBaseInit(TIMx , &TIM_TimeBaseStructure);
     // PWM1 Mode configuration: Channel2

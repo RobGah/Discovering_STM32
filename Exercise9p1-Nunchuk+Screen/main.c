@@ -49,7 +49,7 @@ Some notes:
     I just took the I2C module verbatim from that subfolder. I included the I2Croutines module
     because the book references it. Have NOT tested it though. 
 
-To test microSD card / FatFS:
+To test:
 -First, read out the accel/joy/button nunchuck output onto UART / TeraTerm
 -Then go about mapping those values to the screen. (sign of life test)
 -From here, enable screen cursor test and play w/ the cursors!

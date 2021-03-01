@@ -41,3 +41,28 @@ void init_onboard_led(void)
     GPIO_Init(LED_PORT, &GPIO_InitStructure);
     GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
 }
+
+void init_GPIO_pin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pinx, int GPIO_Mode)
+/* Generic GPIO pin setup function */
+{
+    if (GPIOx==GPIOA) 
+    {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+    }
+    else if (GPIOx==GPIOB) 
+    {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+    }
+    
+    else  
+    {
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+    }
+
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pinx;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode;
+    GPIO_Init(GPIOx, &GPIO_InitStructure);
+    GPIO_WriteBit(GPIOx, GPIO_Pinx, Bit_RESET); //set to 0 initially
+}
