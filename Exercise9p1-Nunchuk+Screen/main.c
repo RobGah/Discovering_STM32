@@ -46,11 +46,13 @@ I2C 2 is also possible and could PB6 -> PB10 and PB7->PB11
 Some notes:
 -Embarassing, but I finally realized that the Library subfolder has many of these
     modules that the author lists in the book pre-defined and ready for fill-in-the-blank coding.
-    I just took the I2C module verbatim from that subfolder.
+    I just took the I2C module verbatim from that subfolder. I included the I2Croutines module
+    because the book references it. Have NOT tested it though. 
 
 To test microSD card / FatFS:
 -First, read out the accel/joy/button nunchuck output onto UART / TeraTerm
--Then go about mapping those values to the screen.
+-Then go about mapping those values to the screen. (sign of life test)
+-From here, enable screen cursor test and play w/ the cursors!
 
 For UART Debug, I'm using:
 
