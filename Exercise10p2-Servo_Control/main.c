@@ -34,9 +34,8 @@ SD_CS   PA6         SD card Select
 GND     GND         Ground
 
 To test:
--Just run the code - backlight on screen should become increasingly brighter for 2s
--After 2s, screen should start to dim for 2s
--Repeats!
+- Get the Servo motor working w/ the sign of life test - ensure we can do 0-45-90deg with code
+- Map nunchuk joystick inputs to servo pulse width commands - one servo is "up-down", other is "left-right"
 
 For UART Debug, I'm using:
 
@@ -51,7 +50,8 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /*SELECT A TEST by commenting / uncommenting these defs*/
-#define LCD_BACKLIGHT_FADE_TEST
+#define SERVO_SIGN_OF_LIFE_TEST
+//#define SERVO_NUNCHUK_TEST
 
 /****xprintf support****/
 void myputchar(unsigned char c)
@@ -63,9 +63,12 @@ unsigned char mygetchar ()
     return uart_getc(USART1);
 }
 
-//PWM variable
-int pw = 0; //pulse width 0-99.9%
-int ms = 0; //ms count to determine fade in / fade out switchover
+#ifdef SERVO_SIGN_OF_LIFE_TEST
+//PWM variables
+    int pw_0deg = 100; //10% duty cycle 100Hz
+    int pw_45deg = 150; //15% duty cycle 100Hz
+    int pw_90deg = 200; //20% duty cycle 100Hz
+#endif
 
 int main()
 {
@@ -111,25 +114,14 @@ int main()
     //MAIN LOOP
     while (1) 
     {
-        #ifdef LCD_BACKLIGHT_FADE_TEST
-            if((ms < 2000))
-            {
-                pw++;
-            }
-            else if (ms>=2000)
-            {
-                pw--;
-            }
-            //when we get to 4000ms, reset everything.
-            if (ms==4000)
-            {
-                ms = 0;
-                pw = 0; //pw is -1 due to above and we can force it to 0. 
-            }  
-                TIM_SetCompare2(TIM2,pw);
-                Delay(1);//delay 1 ms
-                ms++;
-            #endif
+        #ifdef SERVO_SIGN_OF_LIFE_TEST
+            TIM_SetCompare2(TIM2,pw_0deg); //10% duty cycle @ 100Hz = 1ms
+            Delay(500);
+            TIM_SetCompare2(TIM2,pw_45deg);//15% duty cycle @ 100Hz = 1.5ms
+            Delay(500);
+            TIM_SetCompare2(TIM2,pw_90deg);//20% duty cycle @ 100Hz = 2ms
+            Delay(500);
+        #endif
     }
    return(0);
 }
