@@ -18,12 +18,15 @@ void timer_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div
     // enable timer clock
     RCC_APB1PeriphClockCmd(timerperiph , ENABLE);
     // configure timer e.g. 
-    // PWM frequency = 100 hz with 24 ,000 ,000 hz system clock
-    // 24 ,000 ,000/240 = 100 ,000
+    // PWM frequency = 100 hz with 72 ,000 ,000 hz system clock
+    // 72 ,000 ,000/720 = 100 ,000
     // 100 ,000/1000 = 100
     // "div" comments below for illustration only - all this is configurable
+    //SystemCoreClock is 72MHz on the Blue Pill. 
     TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // e.g. div 240
+    //above inputs yield a 100kHz clock:
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // e.g. div 720
+    //Above inputs give timer a period of 1000 ticks or 100Hz given a 100kHz clock
     TIM_TimeBaseStructure.TIM_Period = period - 1; // e.g. div 1000
     TIM_TimeBaseStructure.TIM_CounterMode = countermode;
     TIM_TimeBaseInit(TIMx , &TIM_TimeBaseStructure);

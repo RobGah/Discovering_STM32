@@ -64,7 +64,7 @@ unsigned char mygetchar ()
 }
 
 //PWM variable
-int pw = 0; //pulse width 0-999
+int pw = 0; //pulse width 0-99.9%
 int ms = 0; //ms count to determine fade in / fade out switchover
 
 int main()
@@ -103,7 +103,9 @@ int main()
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    //init timer using books definition, 100hz pwm signal with 0.1% pwm resolution.
+    //init timer using books definition
+    //divide system's core clock (72MHz) by 100k to get 100KHz tick,
+    //period is 1000 ticks, so 100Hz signal is generated. 
     timer_init(TIM2,RCC_APB1Periph_TIM2,100000,1000,TIM_CounterMode_Up);
 
     //MAIN LOOP
@@ -122,10 +124,10 @@ int main()
             if (ms==4000)
             {
                 ms = 0;
-                pw = 0; //pw is -1 due to above
+                pw = 0; //pw is -1 due to above and we can force it to 0. 
             }  
                 TIM_SetCompare2(TIM2,pw);
-                Delay(2);//delay 2 ms
+                Delay(1);//delay 1 ms
                 ms++;
             #endif
     }
