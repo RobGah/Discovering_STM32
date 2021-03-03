@@ -42,7 +42,7 @@ void init_onboard_led(void)
     GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
 }
 
-void init_GPIO_pin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pinx, int GPIO_Mode)
+void init_GPIO_pin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pinx, int GPIO_Mode, int GPIO_Speed)
 /* Generic GPIO pin setup function */
 {
     if (GPIOx==GPIOA) 
@@ -64,5 +64,7 @@ void init_GPIO_pin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pinx, int GPIO_Mode)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pinx;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode;
     GPIO_Init(GPIOx, &GPIO_InitStructure);
-    GPIO_WriteBit(GPIOx, GPIO_Pinx, Bit_RESET); //set to 0 initially
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+    //GPIO_WriteBit(GPIOx, GPIO_Pinx, Bit_RESET); //set to 0 initially
 }

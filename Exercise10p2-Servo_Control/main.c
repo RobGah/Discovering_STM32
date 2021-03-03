@@ -10,28 +10,33 @@
 #include <stdbool.h>
 #include "uart.h"
 #include "spi.h"
-#include "LCD7735R.h"
 #include "setup_main.h"
 #include "xprintf.h"
 #include "timers.h"
+#include "nunchukservo.h"
 
 /*
 
 Setup:
 
-ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
+Servo is connected to the blue pill by way of
 
-LCD     BluePill    Function
-VCC     5V          Power
-BKL     PA1         Backlight Control
-RESET   PA3         LCD Reset
-RS      PA4         Data/Control Toggle
-MISO    PB14        SlaveOut
-MOSI    PB15        SlaveIn
-SCLK    PB13        Clock for SPI2
-LCD CS  PA5         LCD Select 
-SD_CS   PA6         SD card Select
-GND     GND         Ground
+Servo   BluePill    BluePill Pin    Note
+5V      N/A         N/A             Separate supply
+GND     N/A         N/A             GND shared by 5V supply and Bluepill
+CTRL    TIM2        A1              For sign of life test(at least) - see the code.
+
+
+Wii Nunchuk is connected to STM32 by way of:
+Line    Nunchuk     STM32
+3.3V    +           3.3V
+GND     -           GND
+Clock   c           PB6
+Data    d           PB7
+
+This is effectively I2C1. 
+I2C 2 is also possible and could PB6 -> PB10 and PB7->PB11 - see code. 
+
 
 To test:
 - Get the Servo motor working w/ the sign of life test - ensure we can do 0-45-90deg with code
@@ -50,8 +55,8 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /*SELECT A TEST by commenting / uncommenting these defs*/
-#define SERVO_SIGN_OF_LIFE_TEST
-//#define SERVO_NUNCHUK_TEST
+//#define SERVO_SIGN_OF_LIFE_TEST
+#define SERVO_NUNCHUK_TEST
 
 /****xprintf support****/
 void myputchar(unsigned char c)
@@ -68,6 +73,8 @@ unsigned char mygetchar ()
     int pw_0deg = 100; //10% duty cycle 100Hz
     int pw_45deg = 150; //15% duty cycle 100Hz
     int pw_90deg = 200; //20% duty cycle 100Hz
+    
+    //135deg or 25% duty ~sorta~ works on my servo but it seems to get strained . 
 #endif
 
 int main()
@@ -91,17 +98,24 @@ int main()
     GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
     bool ledval = false;    
     
-    // GPIOA LCD Backlight config for pwm. 
-    GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+    #ifdef SERVO_SIGN_OF_LIFE_TEST
+        // GPIOA config for pwm / servo. 
+        GPIO_InitTypeDef GPIO_InitStructure;
+	    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+	    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	    GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    //init timer using books definition
-    //divide system's core clock (72MHz) by 100k to get 100KHz tick,
-    //period is 1000 ticks, so 100Hz signal is generated. 
-    pwm_init(TIM2,RCC_APB1Periph_TIM2,100000,1000,TIM_CounterMode_Up);
+        //init timer using books definition
+        //divide system's core clock (72MHz) by 100k to get 100KHz tick,
+        //period is 1000 ticks, so 100Hz signal is generated. 
+        pwm_init(TIM2,RCC_APB1Periph_TIM2,100000,1000,TIM_CounterMode_Up);
+    #endif
+
+    #ifdef SERVO_NUNCHUK_TEST
+        init_nunchuk_servo_peripherals(I2C2,100000,0xA4,GPIOB,GPIO_Pin_8,GPIOB,GPIO_Pin_9);
+    #endif
+
 
     //MAIN LOOP
     while (1) 
@@ -113,6 +127,10 @@ int main()
             Delay(1000);
             TIM_SetCompare2(TIM2,pw_90deg);//20% duty cycle @ 100Hz = 2ms
             Delay(1000);
+        #endif
+
+        #ifdef SERVO_NUNCHUK_TEST
+            write_joystick_to_servo();
         #endif
     }
    return(0);
