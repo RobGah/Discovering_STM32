@@ -77,6 +77,14 @@ unsigned char mygetchar ()
     //135deg or 25% duty ~sorta~ works on my servo but it seems to get strained . 
 #endif
 
+#ifdef SERVO_NUNCHUK_TEST
+//nunchuk variables
+#define I2C_USED            I2C1
+#define NUNCHUK_ADDRESS     0xA4
+#define I2C_SPEED           100000
+uint8_t nunchuk_data_buffer[6];
+#endif
+
 int main()
 {
     // Configure SysTick Timer
@@ -113,7 +121,7 @@ int main()
     #endif
 
     #ifdef SERVO_NUNCHUK_TEST
-        init_nunchuk_servo_peripherals(I2C2,100000,0xA4,GPIOB,GPIO_Pin_8,GPIOB,GPIO_Pin_9);
+        init_nunchuk_servo_peripherals(I2C_USED,I2C_SPEED,NUNCHUK_ADDRESS);
     #endif
 
 
@@ -130,7 +138,7 @@ int main()
         #endif
 
         #ifdef SERVO_NUNCHUK_TEST
-            write_joystick_to_servo();
+            write_joystick_to_servo(I2C_USED,NUNCHUK_ADDRESS,nunchuk_data_buffer);
         #endif
     }
    return(0);

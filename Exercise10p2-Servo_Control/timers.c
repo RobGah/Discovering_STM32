@@ -11,7 +11,7 @@
 #include <stdbool.h>
 
 void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
-     uint32_t period,uint16_t countermode)
+     uint32_t period,uint16_t countermode, int channel)
 {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef TIM_OCInitStructure;
@@ -35,7 +35,22 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
     TIM_OCStructInit (& TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OC2Init(TIMx , &TIM_OCInitStructure);
+    
+    switch(channel)
+    {
+        case 1:
+            TIM_OC1Init(TIMx , &TIM_OCInitStructure);
+        case 2:
+            TIM_OC2Init(TIMx , &TIM_OCInitStructure);
+        case 3:
+            TIM_OC3Init(TIMx , &TIM_OCInitStructure);
+        case 4: 
+            TIM_OC4Init(TIMx , &TIM_OCInitStructure);
+        default:
+            TIM_OC1Init(TIMx,&TIM_OCInitStructure);
+    }
+
+    
     // Enable Timer
     TIM_Cmd(TIMx , ENABLE); 
 }
