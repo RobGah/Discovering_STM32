@@ -82,17 +82,9 @@ int main()
     xdev_in(mygetchar); 
     xdev_out(myputchar);
     
-
     //uart port opened for debugging
     uart_open(USART1,9600);
     xprintf("UART is Live.\r\n");
-    
-    //init LCD screen
-    ST7735_init(); //n.b. this inits the backlight pin too but we reconfig it later
-    xprintf("ST7735 initialized!\r\n");
-    ST7735_backlight(true);
-    ST7735_fillScreen(GREEN);
-    Delay(1000); //let the screen actually turn full on as an initial sign of life
 
     // start LED
     init_onboard_led();
@@ -116,11 +108,11 @@ int main()
     {
         #ifdef SERVO_SIGN_OF_LIFE_TEST
             TIM_SetCompare2(TIM2,pw_0deg); //10% duty cycle @ 100Hz = 1ms
-            Delay(500);
+            Delay(1000);
             TIM_SetCompare2(TIM2,pw_45deg);//15% duty cycle @ 100Hz = 1.5ms
-            Delay(500);
+            Delay(1000);
             TIM_SetCompare2(TIM2,pw_90deg);//20% duty cycle @ 100Hz = 2ms
-            Delay(500);
+            Delay(1000);
         #endif
     }
    return(0);
