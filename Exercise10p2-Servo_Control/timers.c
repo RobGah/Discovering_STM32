@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include "timers.h"
 
 void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
      uint32_t period,uint16_t countermode, int channel)
