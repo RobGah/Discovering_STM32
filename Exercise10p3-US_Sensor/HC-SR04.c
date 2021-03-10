@@ -6,6 +6,7 @@
 #include <stm32f10x_spi.h>
 #include <stm32f10x_usart.h>
 #include <stm32f10x_i2c.h>
+#include <math.h>
 #include <stm32f10x_tim.h>
 #include <stdint.h>
 #include <string.h>
@@ -17,7 +18,7 @@
 
 static int calc_distance_from_echo_pulse(int pw)
 {
-    int distance_in_cm = pw/58; //divide pulse width by 58us or 1/(speed of sound*2)
+    int distance_in_cm = round((float)pw/58); //divide pulse width by 58us or 1/(speed of sound*2)
 
     //explicitly (so I remember where this came from):
     //speed of sound in cm = 34300 cm/s or ~29us / cm. 
@@ -34,15 +35,15 @@ void US_sensor_init(void)
     init_GPIO_pin(GPIOB,GPIO_Pin_9,GPIO_Mode_AF_PP,GPIO_Speed_50MHz);
     xprintf("GPIO PB9 initialized for TIM4!\r\n");
     //book says longer periods for the IC timer than the OC timer. 
-    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000, 200 ,TIM_CounterMode_Up, 
-        1,TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,0,false); //500hz sig
+    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000, 1000 ,TIM_CounterMode_Up, 
+        TIM_Channel_1,TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,TIM_TS_TI1FP1,false); 
     xprintf("Rising Edge Input Capture initialized for TIM1 CH1!\r\n");
-    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000,200 ,TIM_CounterMode_Up, 
-        2,TIM_ICPolarity_Falling, TIM_ICSelection_IndirectTI,TIM_TS_TI1FP1,true); //500hz sig
+    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000,1000 ,TIM_CounterMode_Up, 
+        TIM_Channel_2,TIM_ICPolarity_Falling, TIM_ICSelection_IndirectTI,TIM_TS_TI1FP1,true);
     xprintf("Falling Edge Input Capture initialized for TIM1 CH2!\r\n");
     xprintf("Waveform pulsewidth capture mechanism initialized!\r\n");
     //Initialize TIM1 GPIO Pin
-    init_GPIO_pin(GPIOA,GPIO_Pin_8,GPIO_Mode_AF_PP,GPIO_Speed_50MHz);
+    init_GPIO_pin(GPIOA,GPIO_Pin_8,GPIO_Mode_IN_FLOATING,GPIO_Speed_50MHz);
     xprintf("GPIO PA8 initialized for TIM1!\r\n");
 
     //START PWM trig signal
@@ -58,9 +59,9 @@ int read_US_sensor_distance_cm(void)
 {
     //unclear if I need to take diff between the 2 capture registers
     //or if the coupled capture regs + reset do it for me?
-    int UScapture1 = TIM_GetCapture1(TIM4);
+    int UScapture1 = TIM_GetCapture1(TIM1);
     xprintf("Capture 1 Register reads %d.\r\n",UScapture1);
-    int UScapture2 = TIM_GetCapture2(TIM4);
+    int UScapture2 = TIM_GetCapture2(TIM1);
     xprintf("Capture 2 Register reads %d.\r\n",UScapture2);
     int UScapturediff = UScapture2 - UScapture1;
     xprintf("Capture Register diff is %d\r\n",UScapturediff);

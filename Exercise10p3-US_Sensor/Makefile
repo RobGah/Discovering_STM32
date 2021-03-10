@@ -1,5 +1,10 @@
 TEMPLATEROOT = ..
 
+#folders-WIP
+IDIR = ../include
+IDIR = obj
+LDIR = ../lib
+
 # compilation flags for gdb
 
 CFLAGS  = -O1 -g 

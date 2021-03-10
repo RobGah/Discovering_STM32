@@ -70,7 +70,7 @@ int main()
     xdev_out(myputchar);
     
     //uart port opened for debugging
-    uart_open(USART1,115200);
+    uart_open(USART1,9600);
     xprintf("UART is Live.\r\n");
 
     // start LED

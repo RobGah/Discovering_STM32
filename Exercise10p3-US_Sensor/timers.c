@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "timers.h"
+#include "xprintf.h"
 
 void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
      uint32_t period,uint16_t countermode, int channel)
@@ -57,7 +58,7 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
 }
 
 void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
-    uint32_t period,uint16_t countermode, int channel,uint16_t polarity, uint16_t selection, uint16_t input_trigger,
+    uint32_t period,uint16_t countermode, uint16_t channel,uint16_t polarity, uint16_t selection, uint16_t input_trigger,
     bool init_complete)
 {
     /* 
@@ -99,23 +100,28 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_ICInitTypeDef TIM_ICInitStructure;
+    
     // enable timer clock
     RCC_APB1PeriphClockCmd(timerperiph , ENABLE);
+   
+    //init the structs
+    TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
+
     // configure timer e.g. 
     // PWM frequency = 100 hz with 72 ,000 ,000 hz system clock
     // 72 ,000 ,000/720 = 100 ,000
     // 100 ,000/1000 = 100
     // "div" comments below for illustration only - all this is configurable
     //SystemCoreClock is 72MHz on the Blue Pill. 
-    TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
     //above inputs yield a 100kHz clock:
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // e.g. div 720
     //Above inputs give timer a period of 1000 ticks or 100Hz given a 100kHz clock
     TIM_TimeBaseStructure.TIM_Period = period - 1; // e.g. div 1000
     TIM_TimeBaseStructure.TIM_CounterMode = countermode;
     TIM_TimeBaseInit(TIMx , &TIM_TimeBaseStructure);
-    
+
     //Input Capture setup
+    TIM_ICStructInit(& TIM_ICInitStructure);
     TIM_ICInitStructure.TIM_Channel = channel;
     TIM_ICInitStructure.TIM_ICPolarity = polarity;
     TIM_ICInitStructure.TIM_ICSelection = selection;
@@ -125,13 +131,13 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
 
     if(init_complete == true)
     {
-    //configure TIM1 for slave mode w. TI1FP1 as a reset signal
-    TIM_SelectInputTrigger(TIMx , input_trigger);
-    TIM_SelectSlaveMode(TIMx , TIM_SlaveMode_Reset);
-    TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable);
+        //configure TIM1 for slave mode w. TI1FP1 as a reset signal
+        TIM_SelectInputTrigger(TIMx , input_trigger);
+        TIM_SelectSlaveMode(TIMx , TIM_SlaveMode_Reset);
+        TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable);
 
-    // Enable Timer
-    TIM_Cmd(TIMx , ENABLE); 
+        // Enable Timer
+        TIM_Cmd(TIMx , ENABLE); 
     }
 }
 
