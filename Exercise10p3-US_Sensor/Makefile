@@ -1,10 +1,5 @@
 TEMPLATEROOT = ..
 
-#folders-WIP
-IDIR = ../include
-IDIR = obj
-LDIR = ../lib
-
 # compilation flags for gdb
 
 CFLAGS  = -O1 -g 
@@ -13,7 +8,7 @@ LDLIBS += -lm
 
 # object files
 
-OBJS=  $(STARTUP) main.o
+OBJS =  $(STARTUP) main.o
 OBJS += spi.o uart.o setup_main.o timers.o 
 OBJS += xprintf.o HC-SR04.o
 OBJS += stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o 

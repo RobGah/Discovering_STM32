@@ -30,26 +30,26 @@ static int calc_distance_from_echo_pulse(int pw)
 
 void US_sensor_init(void)
 {
-    pwm_init(TIM4,RCC_APB1Periph_TIM4,100000,100,TIM_CounterMode_Up,4); //1k clock sig
+    //Clock Prescaler
+    pwm_init(TIM4,RCC_APB1Periph_TIM4,1000000,100000,TIM_CounterMode_Up,4);
     xprintf("TIM4 CH4 initialized!\r\n");
     init_GPIO_pin(GPIOB,GPIO_Pin_9,GPIO_Mode_AF_PP,GPIO_Speed_50MHz);
     xprintf("GPIO PB9 initialized for TIM4!\r\n");
     //book says longer periods for the IC timer than the OC timer. 
     init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000, 1000 ,TIM_CounterMode_Up, 
-        TIM_Channel_1,TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI,TIM_TS_TI1FP1,false); 
+        TIM_Channel_1,TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI); 
     xprintf("Rising Edge Input Capture initialized for TIM1 CH1!\r\n");
     init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000,1000 ,TIM_CounterMode_Up, 
-        TIM_Channel_2,TIM_ICPolarity_Falling, TIM_ICSelection_IndirectTI,TIM_TS_TI1FP1,true);
+        TIM_Channel_2,TIM_ICPolarity_Falling, TIM_ICSelection_IndirectTI);
     xprintf("Falling Edge Input Capture initialized for TIM1 CH2!\r\n");
+    init_input_capture_reset(TIM1,TIM_TS_TI1FP1);
     xprintf("Waveform pulsewidth capture mechanism initialized!\r\n");
     //Initialize TIM1 GPIO Pin
     init_GPIO_pin(GPIOA,GPIO_Pin_8,GPIO_Mode_IN_FLOATING,GPIO_Speed_50MHz);
     xprintf("GPIO PA8 initialized for TIM1!\r\n");
 
     //START PWM trig signal
-    //Assuming 1k trig sig, period 1ms we need 10us or .01 of trig sig period
-    //therefore, pw is 10 as 10/1000 = .01 (pw value is 0-999)
-    int us_pw = 10; 
+    int us_pw = 10;
     TIM_SetCompare4(TIM4,us_pw);
 
 

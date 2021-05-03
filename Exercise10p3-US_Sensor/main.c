@@ -90,7 +90,7 @@ int US_measurement = 0;
         #ifdef RANGEFINDER_TEST
         US_measurement  = read_US_sensor_distance_cm();
         xprintf("US sensor distance is %dcm.\r\n", US_measurement);
-        Delay(100);
+        Delay(10);
         #endif
     }
    return(0);

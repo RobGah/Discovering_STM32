@@ -36,6 +36,7 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
     // Edge -aligned; not single pulse mode
     TIM_OCStructInit (& TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCInitStructure.TIM_Pulse = 10 ; //screw it!
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     
     switch(channel)
@@ -58,8 +59,7 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
 }
 
 void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
-    uint32_t period,uint16_t countermode, uint16_t channel,uint16_t polarity, uint16_t selection, uint16_t input_trigger,
-    bool init_complete)
+    uint32_t period,uint16_t countermode, uint16_t channel,uint16_t polarity, uint16_t selection)
 {
     /* 
     *****README:*****
@@ -129,15 +129,18 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
     TIM_ICInitStructure.TIM_ICFilter = 0;
     TIM_ICInit(TIMx , &TIM_ICInitStructure);
 
-    if(init_complete == true)
+    // Enable Timer
+    TIM_Cmd(TIMx , ENABLE); 
+}
+
+void init_input_capture_reset(TIM_TypeDef * TIMx, uint16_t input_trigger)
     {
+        /* Sets up master-slave relationship between timer channels for timer reset condition */
+
         //configure TIM1 for slave mode w. TI1FP1 as a reset signal
         TIM_SelectInputTrigger(TIMx , input_trigger);
         TIM_SelectSlaveMode(TIMx , TIM_SlaveMode_Reset);
-        TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable);
-
-        // Enable Timer
-        TIM_Cmd(TIMx , ENABLE); 
+        TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable); //IS THIS TIM1 or TIM2?
+        //should be TIM1 for all!
     }
-}
 
