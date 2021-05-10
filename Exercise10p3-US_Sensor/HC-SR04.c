@@ -36,10 +36,10 @@ void US_sensor_init(void)
     init_GPIO_pin(GPIOB,GPIO_Pin_9,GPIO_Mode_AF_PP,GPIO_Speed_50MHz);
     xprintf("GPIO PB9 initialized for TIM4!\r\n");
     //book says longer periods for the IC timer than the OC timer. 
-    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000, 1000 ,TIM_CounterMode_Up, 
+    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000, 10000 ,TIM_CounterMode_Up, 
         TIM_Channel_1,TIM_ICPolarity_Rising, TIM_ICSelection_DirectTI); 
     xprintf("Rising Edge Input Capture initialized for TIM1 CH1!\r\n");
-    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000,1000 ,TIM_CounterMode_Up, 
+    init_input_pw_capture(TIM1, RCC_APB2Periph_TIM1, 100000,10000 ,TIM_CounterMode_Up, 
         TIM_Channel_2,TIM_ICPolarity_Falling, TIM_ICSelection_IndirectTI);
     xprintf("Falling Edge Input Capture initialized for TIM1 CH2!\r\n");
     init_input_capture_reset(TIM1,TIM_TS_TI1FP1);

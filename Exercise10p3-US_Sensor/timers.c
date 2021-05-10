@@ -17,7 +17,7 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
 {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef TIM_OCInitStructure;
-    // enable timer clock
+    // enable timer clock - Note the APB#!
     RCC_APB1PeriphClockCmd(timerperiph , ENABLE);
     // configure timer e.g. 
     // PWM frequency = 100 hz with 72 ,000 ,000 hz system clock
@@ -36,7 +36,7 @@ void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
     // Edge -aligned; not single pulse mode
     TIM_OCStructInit (& TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-    TIM_OCInitStructure.TIM_Pulse = 10 ; //screw it!
+    //TIM_OCInitStructure.TIM_Pulse = 10 ; //screw it!
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     
     switch(channel)
@@ -101,8 +101,8 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_ICInitTypeDef TIM_ICInitStructure;
     
-    // enable timer clock
-    RCC_APB1PeriphClockCmd(timerperiph , ENABLE);
+    // enable timer clock - N.B. the APB#!
+    RCC_APB2PeriphClockCmd(timerperiph , ENABLE);
    
     //init the structs
     TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
@@ -140,7 +140,6 @@ void init_input_capture_reset(TIM_TypeDef * TIMx, uint16_t input_trigger)
         //configure TIM1 for slave mode w. TI1FP1 as a reset signal
         TIM_SelectInputTrigger(TIMx , input_trigger);
         TIM_SelectSlaveMode(TIMx , TIM_SlaveMode_Reset);
-        TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable); //IS THIS TIM1 or TIM2?
-        //should be TIM1 for all!
+        TIM_SelectMasterSlaveMode(TIMx , TIM_MasterSlaveMode_Enable);
     }
 

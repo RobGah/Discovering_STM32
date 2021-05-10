@@ -1,3 +1,7 @@
+# name of executable
+
+ELF=$(notdir $(CURDIR)).elf                    
+
 # Tool path
 
 TOOLROOT="C:\Users\Robert\OneDrive\Documents\GNU_ARM_TOOLS\9-2020-q2-update\bin"
@@ -54,12 +58,12 @@ CFLAGS+= -I$(TEMPLATEROOT)/Library/ff9/src -I$(TEMPLATEROOT)/Library
 
 # Build executable 
 
-$(ELF) : $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
+$(ELF) : $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 # compile and generate dependency info
 
-$(OBJDIR)/%.o: %.c
+%.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 	$(CC) -MM $(CFLAGS) $< > $*.d
 
@@ -67,7 +71,7 @@ $(OBJDIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) $(OBJ:.o=.d) $(ELF) startup_stm32f* $(CLEANOTHER)
+	rm -f $(OBJS) $(OBJS:.o=.d) $(ELF) startup_stm32f* $(CLEANOTHER)
 
 debug: $(ELF)
 	arm-none-eabi-gdb $(ELF)
