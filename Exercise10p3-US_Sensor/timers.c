@@ -69,7 +69,7 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
     In hindsight, I probably ought to have a Timer_config function and have
     separate output and input config functions. I'll roll with this for now and might re-factor later.
     
-    A 2-part function to configure input capture for 2 channels of the same timer
+    A 2-part function (timer + input capture) to configure input capture for 2 channels of the same timer
     to measure pulse width.
 
     ***Function Parameters:***
@@ -81,21 +81,12 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
     countermode = up, down, up-down counting mode selection
     channel = which timer channel you want to config e.g. 1,2, etc
         see datasheet for how the timer channels map to stm32 pins!
-        config pins (not in this function) for AF_PP operation to use the timer channel
+        config pins (not in this function) for IN_FLOATING operation to capture signals
     polarity = rising or falling edge e.g. TIM_ICPolarity_Rising
     selection = direct or indirect (don't actually know what it does tbh)
         e.g. TIM_ICSelection_IndirectTI
     input_trigger = what you want to trigger a counter reset. e.g. TIM_TS_TI1FP1
-    init_complete = bool to signal that the complementary signal (rising/falling or falling/rising) 
-        has been set and we can config the reset signal for the timer and enable the timer. 
 
-    *****USE:*****
-    Step 1 - config a rising/falling edge IC condition. Input trigger is a dummy variable (set it to 0),
-            and init_complete is set to false (0).
-    Step 2 - config a faling/rising edge IC condition. Input trigger is something like TIM_TS_TIFP1
-            and init complete is set to true (1). TIMx is enabled and your ready to measure pulse-widths!
-
-    
     */
 
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -106,17 +97,8 @@ void init_input_pw_capture(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t pr
    
     //init the structs
     TIM_TimeBaseStructInit (& TIM_TimeBaseStructure);
-
-    // configure timer e.g. 
-    // PWM frequency = 100 hz with 72 ,000 ,000 hz system clock
-    // 72 ,000 ,000/720 = 100 ,000
-    // 100 ,000/1000 = 100
-    // "div" comments below for illustration only - all this is configurable
-    //SystemCoreClock is 72MHz on the Blue Pill. 
-    //above inputs yield a 100kHz clock:
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1; // e.g. div 720
-    //Above inputs give timer a period of 1000 ticks or 100Hz given a 100kHz clock
-    TIM_TimeBaseStructure.TIM_Period = period - 1; // e.g. div 1000
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / prescaler_div) - 1;
+    TIM_TimeBaseStructure.TIM_Period = period - 1; 
     TIM_TimeBaseStructure.TIM_CounterMode = countermode;
     TIM_TimeBaseInit(TIMx , &TIM_TimeBaseStructure);
 
