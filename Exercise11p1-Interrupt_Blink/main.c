@@ -77,13 +77,15 @@ int main()
 
     //init timers and pins for US sensor
     #ifdef BLINK_TEST
-        config_NVIC(TIM2_IRQn,3);
+    //TIM2_IRQn shows up as typo but its legit 
+    //preprocessor flag defines board and interrupts in makefile.common
+        config_NVIC(TIM2_IRQn,3); 
         //1us ticks, period of 500k us = 2hz signal.
-        timer_init(TIM2,RCC_APB1Periph_TIM2,1000000,500000,TIM_CounterMode_Up);
+        timer_init(TIM2,RCC_APB1Periph_TIM2,100000,500000,TIM_CounterMode_Up);
         // start LED
         init_onboard_led();
         
-        // Enable Timer Interrupt, enable timer
+        // Enable Timer Interrupt, enable timermingw
         TIM_ITConfig(TIM2 , TIM_IT_Update , ENABLE);
         TIM_Cmd(TIM2 , ENABLE);
     #endif
