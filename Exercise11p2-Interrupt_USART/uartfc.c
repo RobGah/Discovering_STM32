@@ -15,7 +15,7 @@ static int TxPrimed = 0;
 struct Queue {
   //conceptually I'm thinking of a clockwise moving circle
   //read "chases" write as the author explains. 
-  uint16_t pRD, pWR; //read and write "pointers"
+  uint16_t pRD, pWR; //read and write "pointers" - more like indexes
   uint8_t  q[QUEUE_SIZE]; //actual buffer of some size
 };
 
@@ -56,7 +56,7 @@ static int Enqueue(struct Queue *q, const uint8_t *data, uint16_t len)
       //else, advance the write pointer to next empty segment of the buffer. 
       q->pWR = ((q->pWR + 1) ==  QUEUE_SIZE) ? 0 : q->pWR + 1; 
     }
-  return i;
+  return i;//returns # of data items loaded
 }
 
 static int Dequeue(struct Queue *q, uint8_t *data, uint16_t len)
@@ -64,14 +64,19 @@ static int Dequeue(struct Queue *q, uint8_t *data, uint16_t len)
   int i;
   for (i = 0; !QueueEmpty(q) && (i < len); i++)
     {
-      data[i] = q->q[q->pRD];
+      data[i] = q->q[q->pRD]; //read data from the pRD "pointer" (index) location
+      //if pRD is at the last position in the queue, wraparound to 0
+      //else, increment pRD
       q->pRD = ((q->pRD + 1) ==  QUEUE_SIZE) ? 0 : q->pRD + 1;
     }
-  return i;
+  return i; //returns # of items read. 
 }
 
 int  uart_open (uint8_t uart, uint32_t baud, uint32_t flags)
 {
+
+  //n.b. pin assignment is is different for the Blue Pill. 
+
   USART_InitTypeDef USART_InitStructure; 
   GPIO_InitTypeDef GPIO_InitStructure; 
   NVIC_InitTypeDef NVIC_InitStructure;
@@ -164,17 +169,26 @@ int  uart_open (uint8_t uart, uint32_t baud, uint32_t flags)
 
 int uart_close(uint8_t uart)
 {
+  //nothing here?
+  if(uart==1) //only handle UART1 as with uart_open
+  {
+    USART_Cmd(USART1,DISABLE);
+  }
 
 }
 
 ssize_t uart_write(uint8_t uart, const uint8_t *buf, size_t nbyte)
+//signed size_t - interesting datatype. size_t is garunteed to be big enough to handle
+//the largest element the system can handle. 
+//It seems to be "unsigned int" for me as per its typedef
+//ssize_t can take on a negative value. 
 {
   uint8_t data;
   int i = 0;
-
-  if (uart == 1 && nbyte)
+  //if USART1 and we have bytes to write
+  if (uart == 1 && nbyte) 
     {
-      i = Enqueue(&UART1_TXq, buf, nbyte);
+      i = Enqueue(&UART1_TXq, buf, nbyte); //queue them up for sending
   
       // if we added something and the Transmitter isn't working
       // give it a kick by turning on the buffer empty interrupt
@@ -199,12 +213,12 @@ ssize_t uart_read (uint8_t uart, uint8_t *buf, size_t nbyte)
   if (uart == 1)
     {
 
-      i = Dequeue(&UART1_RXq, buf, nbyte);
+      i = Dequeue(&UART1_RXq, buf, nbyte); //count # of things read
 
       // If the queue has fallen below high water mark, enable nRTS
 
       if (QueueAvail(&UART1_RXq) <= HIGH_WATER)
-	GPIO_WriteBit(GPIOA, GPIO_Pin_12, 0);    
+	GPIO_WriteBit(GPIOA, GPIO_Pin_12, 0); //tell our usart to send!
     }
   return i;
 }
@@ -219,17 +233,19 @@ void USART1_IRQHandler(void)
 
       USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 
-      // buffer the data (or toss it if there's no room 
+      // buffer the data (or toss it if there's no room) 
       // Flow control is supposed to prevent this
 
-      data = USART_ReceiveData(USART1) & 0xff;
+      data = USART_ReceiveData(USART1) & 0xff; //get Rec'd data and all 1's mask
+
+      //if we can't enqueue our rec'd byte of data into the recieve register
       if (!Enqueue(&UART1_RXq, &data, 1))
-	RxOverflow = 1;
+	RxOverflow = 1; //set overflow flag
 
       // If queue is above high water mark, disable nRTS
 
       if (QueueAvail(&UART1_RXq) > HIGH_WATER)
-	GPIO_WriteBit(GPIOA, GPIO_Pin_12, 1);   
+	GPIO_WriteBit(GPIOA, GPIO_Pin_12, 1);   //tells usart to stop sending
     }
   
   if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
@@ -238,9 +254,9 @@ void USART1_IRQHandler(void)
 
       uint8_t data;
 
-      if (Dequeue(&UART1_TXq, &data, 1))
+      if (Dequeue(&UART1_TXq, &data, 1)) //grab a byte from the tx register
 	{
-	  USART_SendData(USART1, data);
+	  USART_SendData(USART1, data); //send it!
 	}
       else
 	{
