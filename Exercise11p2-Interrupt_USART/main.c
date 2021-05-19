@@ -10,11 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "uart.h"
-#include "spi.h"
 #include "setup_main.h"
-#include "xprintf.h"
-#include "timers.h"
-#include "interrupts.h"
 
 /*
 
@@ -47,6 +43,8 @@ GND     GND         GND
 
 #define ECHO_TEST
 
+uint8_t buf[8];
+
 int main()
 {
     // Configure SysTick Timer
@@ -60,8 +58,11 @@ int main()
     
 
     //MAIN LOOP
-    while (1) { /* do nothing*/ }
-   
+    while (1) 
+    { 
+        /*do nothing*/
+    }
+
     return(0);
 }
 

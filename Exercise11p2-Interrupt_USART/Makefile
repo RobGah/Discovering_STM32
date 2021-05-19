@@ -9,8 +9,8 @@ LDLIBS += -lm
 # object files
 
 OBJS =  $(STARTUP) main.o
-OBJS += spi.o uart.o setup_main.o timers.o 
-OBJS += xprintf.o misc.o interrupts.o
+OBJS += uartfc.o setup_main.o
+OBJS += misc.o
 OBJS += stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o
 OBJS += stm32f10x_dma.o stm32f10x_spi.o stm32f10x_tim.o
 
