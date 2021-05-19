@@ -38,10 +38,11 @@ static int QueueEmpty(struct Queue *q)
 
 static int QueueAvail(struct Queue *q)
 {
-  //Avail. if total size + write pointer location - read pointer location
+  //Looks more like "QueueFilled" - returns # of occupied slots
+  // gives total size + write pointer location - read pointer location
   //e.g. if size is 12, write is at 3 and read is at 8
-  // 12+3-8 = 7 mod 12 = 7 available. 
-  //returns 0 if WR==RD, indicating empty or unavailability?
+  // 12+3-8 = 7, 7 mod 12 = 7 slots full. aka 8,9,10,11,12,1,2 are all full
+  //returns 0 if WR==RD, indicating totally empty.
   return (QUEUE_SIZE + q->pWR - q->pRD) % QUEUE_SIZE;
 }
 
@@ -75,7 +76,8 @@ static int Dequeue(struct Queue *q, uint8_t *data, uint16_t len)
 int  uart_open (uint8_t uart, uint32_t baud, uint32_t flags)
 {
 
-  //n.b. pin assignment is is different for the Blue Pill. 
+  //n.b. pin assignment is the same for the Blue Pill. 
+  //flags as a param is a dummy?
 
   USART_InitTypeDef USART_InitStructure; 
   GPIO_InitTypeDef GPIO_InitStructure; 
@@ -179,7 +181,7 @@ int uart_close(uint8_t uart)
 
 ssize_t uart_write(uint8_t uart, const uint8_t *buf, size_t nbyte)
 //signed size_t - interesting datatype. size_t is garunteed to be big enough to handle
-//the largest element the system can handle. 
+//the largest element the system can handle. Its the return type of sizeof(). Love it. 
 //It seems to be "unsigned int" for me as per its typedef
 //ssize_t can take on a negative value. 
 {

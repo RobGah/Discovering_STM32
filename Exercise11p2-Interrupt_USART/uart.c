@@ -3,7 +3,12 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
 #include <string.h>
-#include "uart.h"
+//#include "uart.h"
+
+//C doesn't support function overloading, so include for uart.h is commented out
+//to break the association. This source file is DEPRECIATED in favor of uartfc.c
+//aka UART w/ flow control.
+//could revise later to allow both to coexist with an #ifdef or something
 
 int uart_open(USART_TypeDef* USARTx, uint32_t baud)//book calls for uint32_t flags as a param but theres no need?
 {

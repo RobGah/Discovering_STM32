@@ -27,13 +27,15 @@ LED         PC13             Onboard LED
 
 
 To test:
-- Blink the LED at 1Hz (.5s on, .5s off) using interrupts 
+- Set up flow control. Echo characters that are input over terminal.
 
 For UART Debug, I'm using:
 
 UART    BluePill    BluePill Pin 
 TXD     RXD         A9
 RXD     TXD         A10
+CTS     CTS         A11
+RTS     RTS         A12   
 GND     GND         GND
 5V      5V          5V
 
@@ -42,20 +44,8 @@ GND     GND         GND
 #define USE_FULL_ASSERT
 
 /*SELECT A TEST by commenting / uncommenting these defs*/
-#define BLINK_TEST
 
-/****xprintf support****/
-void myputchar(unsigned char c)
-{
-    uart_putc(c, USART1);
-}
-unsigned char mygetchar ()
-{
-    return uart_getc(USART1);
-}
-
-bool ledval = false;    
-
+#define ECHO_TEST
 
 int main()
 {
@@ -64,45 +54,15 @@ int main()
     {
         while(1);
     }
-
-    //setup xprintf 
-    xdev_in(mygetchar); 
-    xdev_out(myputchar);
     
     //uart port opened for debugging
-    uart_open(USART1,9600);
-    xprintf("UART is Live.\r\n");
-
+    uart_open(1, 115200,0); 
     
 
-    //init timers and pins for US sensor
-    #ifdef BLINK_TEST
-    //TIM2_IRQn shows up as typo but its legit 
-    //preprocessor flag defines board and interrupts in makefile.common
-        config_NVIC(TIM2_IRQn,3); 
-        //1us ticks, period of 500k us = 2hz signal.
-        timer_init(TIM2,RCC_APB1Periph_TIM2,100000,500000,TIM_CounterMode_Up);
-        // start LED
-        init_onboard_led();
-        
-        // Enable Timer Interrupt, enable timermingw
-        TIM_ITConfig(TIM2 , TIM_IT_Update , ENABLE);
-        TIM_Cmd(TIM2 , ENABLE);
-    #endif
-
     //MAIN LOOP
-    #ifdef BLINK_TEST
-        while (1) { /* do nothing*/ }
-    #endif
-   return(0);
-}
-
-void TIM2_IRQHandler(void)
-{
-    /* do something */
-    GPIO_WriteBit(LED_PORT, LED_PIN, (ledval) ? Bit_SET : Bit_RESET);
-    ledval = 1-ledval;
-    TIM_ClearITPendingBit(TIM2 ,TIM_IT_Update);
+    while (1) { /* do nothing*/ }
+   
+    return(0);
 }
 
 #ifdef USE_FULL_ASSERT
