@@ -60,9 +60,12 @@ int main()
     while (1) 
     { 
         //read incoming
-        uart_read(1,buf,sizeof(buf));
-        //echo
+        int x = uart_read(1,buf,sizeof(buf));
+        //echo if there is something entered into the terminal. 
+        if(x!=0)
+        {
         uart_write(1,buf,sizeof(buf));
+        }
     }
 
     return(0);
