@@ -3,7 +3,9 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
 #include <misc.h>
-#include <stdio.h>
+//#include <stdio.h>
+#include <stddef.h>
+#include <sys/types.h>
 #include "uart.h"
 
 int RxOverflow = 0;
@@ -269,5 +271,25 @@ void USART1_IRQHandler(void)
 	  USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
 	  TxPrimed = 0;
 	}
+    }
+}
+
+char getchar(void)
+//stdio gives us size_t support, but stipulates
+{
+  uint8_t data;
+  while (Dequeue (&UART1_RXq , &data , 1) != 1);
+      // If the queue has fallen below high water mark , enable nRTS
+  if (QueueAvail (& UART1_RXq) <= HIGH_WATER)
+    GPIO_WriteBit(GPIOA , GPIO_Pin_12 , 0);
+  return data;
+}
+
+int putchar(int c)
+{
+  while (! Enqueue (&UART1_TXq , c, 1));
+    if (! TxPrimed) {
+      TxPrimed = 1;
+      USART_ITConfig(USART1 , USART_IT_TXE , ENABLE);
     }
 }

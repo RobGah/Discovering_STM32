@@ -7,6 +7,7 @@
 #include <stm32f10x_tim.h>
 #include <misc.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include "uart.h"
@@ -41,8 +42,6 @@ GND     GND         GND
 
 /*SELECT A TEST by commenting / uncommenting these defs*/
 
-#define ECHO_TEST
-
 uint8_t buf[8];
 
 int main()
@@ -60,7 +59,10 @@ int main()
     //MAIN LOOP
     while (1) 
     { 
-        /*do nothing*/
+        //read incoming
+        uart_read(1,buf,sizeof(buf));
+        //echo
+        uart_write(1,buf,sizeof(buf));
     }
 
     return(0);
