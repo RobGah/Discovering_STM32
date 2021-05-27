@@ -1,7 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-#define QUEUE_SIZE 12
+#define QUEUE_SIZE 8 //can play with this value to get it right
 #define HIGH_WATER (QUEUE_SIZE-6) //arbitrary and eventually empirical value
 
 int  uart_open (uint8_t uart, uint32_t baud, uint32_t flags);
