@@ -3,7 +3,7 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
 #include <string.h>
-//#include "uart.h"
+#include "uart.h"
 
 //C doesn't support function overloading, so include for uart.h is commented out
 //to break the association. This source file is DEPRECIATED in favor of uartfc.c

@@ -3,10 +3,10 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
 #include <misc.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include "uart.h"
+#include "uartfc.h"
 
 int RxOverflow = 0;
 
