@@ -293,3 +293,24 @@ int putchar(int c)
       USART_ITConfig(USART1 , USART_IT_TXE , ENABLE);
     }
 }
+
+int putstr(char* buf)
+{
+  for(int i = 0; i<strlen(buf);++i)
+    {
+      putchar(buf[i]);
+    }
+
+    return(0);
+}
+
+int getstr(char * buf)
+{
+  //get # of elements in buf - nifty trick!
+  int elementsinbuf = sizeof(buf)/sizeof(buf[0]);
+
+  for(int i=0; i<elementsinbuf; ++i)
+  {
+    buf[i] = getchar();
+  }
+}
