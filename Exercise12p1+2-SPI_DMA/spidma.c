@@ -284,14 +284,14 @@ static int xchng_datablock(SPI_TypeDef *SPIx, int half, const void *tbuf, void *
         SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, !DISABLE);
     }
 
-    //small message? do regular SPI
+    // small message? do regular SPI
     else 
     {
         if(half==1)
         {
             spiReadWrite16(SPIx,&rbuf,&tbuf,count,SPI_FAST);
         }
-        else
+        else // byte
         {
             spiReadWrite(SPIx,&rbuf,&tbuf,count,SPI_FAST);
         }
