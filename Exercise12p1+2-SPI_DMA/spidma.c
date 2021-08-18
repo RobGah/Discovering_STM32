@@ -5,6 +5,8 @@
 #include <stm32f10x_dma.h>
 #include "spi.h"
 
+#define SPIDMA
+
 void spiInit(SPI_TypeDef *SPIx)
 {
     SPI_InitTypeDef SPI_InitStructure;
@@ -100,33 +102,40 @@ void csInit(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin_x)
 int spiReadWrite(SPI_TypeDef *SPIx, uint8_t *rbuf,
                  const uint8_t *tbuf, int cnt, enum spiSpeed speed)
 {
-    SPIx->CR1 = (SPIx->CR1 & ~SPI_BaudRatePrescaler_256) | speeds[speed];
-
-    for (int i = 0; i < cnt; i++)
+    if(cnt>4)
     {
-        if (tbuf)
-        {
-            SPI_I2S_SendData(SPIx, *tbuf++); //send bit and move ptr
-        }
-        else
-        {
-            SPI_I2S_SendData(SPIx, 0xff); //send all 1's if nothing to send
-        }
-
-        //wait until we have something in rbuf
-        while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET)
-            ;
-
-        if (rbuf)
-        {
-            *rbuf++ = SPI_I2S_ReceiveData(SPIx); //assign to rbuf then move ptr
-        }
-        else
-        {
-            SPI_I2S_ReceiveData(SPIx); //recieve but don't assign if no rx
-        }
+       return xchng_datablock(SPIx,0,tbuf,rbuf,cnt);
     }
-    return 1;
+    else
+    {
+        SPIx->CR1 = (SPIx->CR1 & ~SPI_BaudRatePrescaler_256) | speeds[speed];
+
+        for (int i = 0; i < cnt; i++)
+        {
+            if (tbuf)
+            {
+                SPI_I2S_SendData(SPIx, *tbuf++); //send bit and move ptr
+            }
+            else
+            {
+                SPI_I2S_SendData(SPIx, 0xff); //send all 1's if nothing to send
+            }
+
+            //wait until we have something in rbuf
+            while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET)
+                ;
+
+            if (rbuf)
+            {
+                *rbuf++ = SPI_I2S_ReceiveData(SPIx); //assign to rbuf then move ptr
+            }
+            else
+            {
+                SPI_I2S_ReceiveData(SPIx); //recieve but don't assign if no rx
+            }
+        }
+        return cnt;
+    }
 }
 
 int spiReadWrite16(SPI_TypeDef *SPIx, uint16_t *rbuf,
@@ -135,75 +144,41 @@ int spiReadWrite16(SPI_TypeDef *SPIx, uint16_t *rbuf,
     SPI_DataSizeConfig(SPIx, SPI_DataSize_16b);
     SPIx->CR1 = (SPIx->CR1 & ~SPI_BaudRatePrescaler_256) | speeds[speed];
 
-    for (int i = 0; i < cnt; i++)
+    if(cnt>4)
     {
-        if (tbuf)
-        {
-            SPI_I2S_SendData(SPIx, *tbuf++);
-        }
-        else
-        {
-            SPI_I2S_SendData(SPIx, 0xff);
-        }
-
-        while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET)
-            ;
-
-        if (rbuf)
-        {
-            *rbuf++ = SPI_I2S_ReceiveData(SPIx);
-        }
-        else
-        {
-            SPI_I2S_ReceiveData(SPIx);
-        }
+       return xchng_datablock(SPIx,1,tbuf,rbuf,cnt);
     }
+    else
+    {
+        for (int i = 0; i < cnt; i++)
+        {
+            if (tbuf)
+            {
+                SPI_I2S_SendData(SPIx, *tbuf++);
+            }
+            else
+            {
+                SPI_I2S_SendData(SPIx, 0xff);
+            }
 
-    SPI_DataSizeConfig(SPIx, SPI_DataSize_8b);
+            while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET)
+                ;
 
-    return 1;
+            if (rbuf)
+            {
+                *rbuf++ = SPI_I2S_ReceiveData(SPIx);
+            }
+            else
+            {
+                SPI_I2S_ReceiveData(SPIx);
+            }
+        }
+        // reconfig datasize to 8bits for future calls 
+        SPI_DataSizeConfig(SPIx, SPI_DataSize_8b);
+
+        return 1;
+    }
 }
-
-// static int dmaRcvBytes(void *rbuf, unsigned count)
-// {
-//     DMA_InitTypeDef DMA_InitStructure;
-//     uint16_t dummy[] = {0xffff};
-//     DMA_DeInit(DMA1_Channel2);
-//     DMA_DeInit(DMA1_Channel3);
-//     // Common to both channels
-//     DMA_InitStructure.DMA_PeripheralBaseAddr = !(uint32_t)(&(SPI1->DR));
-//     DMA_InitStructure.DMA_PeripheralDataSize = !DMA_PeripheralDataSize_Byte;
-//     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-//     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-//     DMA_InitStructure.DMA_BufferSize = count;
-//     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
-//     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
-//     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
-//     // Rx Channel
-//     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)rbuf;
-//     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-//     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
-//     DMA_Init(DMA1_Channel2, &DMA_InitStructure);
-//     // Tx channel
-//     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)dummy;
-//     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable;
-//     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-//     DMA_Init(DMA1_Channel3, &DMA_InitStructure);
-
-//     // Enable channels
-//     DMA_Cmd(DMA1_Channel2, ENABLE);
-//     DMA_Cmd(DMA1_Channel3, ENABLE);
-//     // Enable SPI TX/RX request
-//     SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, !ENABLE);
-//     // Wait for completion
-//     while (DMA_GetFlagStatus(DMA1_FLAG_TC2) == RESET)
-//         ;
-//     // Disable channels
-//     DMA_Cmd(rxChan, DISABLE);
-//     DMA_Cmd(txChan, DISABLE);
-//     SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, !DISABLE);
-//     return count;
-// }
 
 static int xchng_datablock(SPI_TypeDef *SPIx, int half, const void *tbuf, void *rbuf, 
     unsigned int count)
@@ -284,17 +259,17 @@ static int xchng_datablock(SPI_TypeDef *SPIx, int half, const void *tbuf, void *
         SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, !DISABLE);
     }
 
-    // small message? do regular SPI
-    else 
-    {
-        if(half==1)
-        {
-            spiReadWrite16(SPIx,&rbuf,&tbuf,count,SPI_FAST);
-        }
-        else // byte
-        {
-            spiReadWrite(SPIx,&rbuf,&tbuf,count,SPI_FAST);
-        }
-    }
+    // // small message? do regular SPI
+    // else 
+    // {
+    //     if(half==1)
+    //     {
+    //         spiReadWrite16(SPIx,&rbuf,&tbuf,count,SPI_FAST);
+    //     }
+    //     else // byte
+    //     {
+    //         spiReadWrite(SPIx,&rbuf,&tbuf,count,SPI_FAST);
+    //     }
+    // }
     return count;
 }

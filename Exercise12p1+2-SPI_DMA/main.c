@@ -3,32 +3,58 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
 #include <stm32f10x_usart.h>
-#include <stm32f10x_i2c.h>
-#include <stm32f10x_tim.h>
-#include <stm32f10x_exti.h>
-#include <misc.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include "diskio.h"
 #include "uart.h"
+#include "spi.h"
+#include "LCD7735R.h"
 #include "setup_main.h"
-#include "interrupts.h"
+#include "ff.h"
 #include "xprintf.h"
+#include "sdcard.h"
 
 
 /*
 
+See: http://elm-chan.org/fsw/ff/00index_e.html
+
+Remarks:
+-12p1 is easy. 12p2 is a pretty brutal and involved exercise. Very challenging. 
+-I lumped the 2 exercises together because it just makes sense. 
+
 Setup:
 
+ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
 
-BluePill    BluePill Pin    Note
-LED         PC13             Onboard LED 
-Switch*     PA0              External pushbutton w/ 10k pulldown to gnd 
-*RC circuit as shown by author 
+LCD     BluePill    Function
+VCC     5V          Power
+BKL     PA1         Backlight Control
+RESET   PA3         LCD Reset
+RS      PA4         Data/Control Toggle
+MISO    PB14        SlaveOut
+MOSI    PB15        SlaveIn
+SCLK    PB13        Clock for SPI2
+LCD CS  PA5         LCD Select 
+SD_CS   PA6         SD card Select
+GND     GND         Ground
 
-To test:
-- Set up flow control. Echo characters that are input over terminal.
+Strategy:
+-Bonus points if we can HW flow control working w/ xprintf!
+-Get spidma.c working (hopefully)
+-Get elm-chan's FatFs to parse the SD card for bmp files. 
+    Ensure that we can identify them on disc. 
+    Can do this with spi.c first just to prove it out.
+-Test the FatFS SD card bmp file identifier w/ SPIDMA.c just to prove it works
+-Next, parse each file for its file info
+    Look into using parseBMP() from author
+-Finally, feed the BMP pic bytes to the LCD screen.
+    Will need to convert 24 bit BMP to 16 bit BMP. See author's remarks.
+    Should reject images that are not 128x160 in size and 24 bit color. Test this.
+    Loop thru the pictures on the card. Forever. 
+-Write a timer routine to measure the time to display an image for different DMA block sizes 
+
 
 For UART Debug, I'm using:
 
@@ -44,17 +70,14 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
-/*SELECT A TEST by commenting / uncommenting these defs*/
-#define BUTTON_TEST
-//#define USART_TEST
+// SD Card Variables
+FATFS FatFs;		/* FatFs work area needed for each volume */
+FIL Fil;			/* File object needed for each open file */
+UINT bmp_count = 0; /* ad oculos*/
+FRESULT fr;         /* FatFs function common result code*/
+char path[] = "";   /* Root Directory path */
 
-#ifdef USART_TEST
-    #include "uartfc.h"
-    uint8_t buf[8];
-#endif
-
-#ifdef BUTTON_TEST
-/****xprintf support****/
+// xprintf() support
 void myputchar(unsigned char c)
 {
     uart_putc(c, USART1);
@@ -65,7 +88,6 @@ unsigned char mygetchar ()
 }
 
 bool ledval = false;
-#endif
 
 int main()
 {
@@ -74,55 +96,69 @@ int main()
     {
         while(1);
     }
-    #ifdef USART_TEST
-        //uart port opened for debugging
-        uart_open(1, 115200,0); 
-    #endif
-    
-    #ifdef BUTTON_TEST
 
-    //setup xprintf 
+    //setup xprintf - I like these func's better than what the book suggests
     xdev_in(mygetchar); 
     xdev_out(myputchar);
 
-    //open uart
+    //uart port opened for debugging
     uart_open(USART1,9600);
-    xprintf("UART is live!\r\n");
+    xprintf("UART is Live.\r\n");
+    
+    //might not be needed but I kept it.
+    ST7735_init();
+    xprintf("ST7735 Initialized.\r\n");
+    ST7735_backlight(1);
+    xprintf("LCD Backlight ON.\r\n");
 
-    //Set-up LED
+    // start LED
     init_onboard_led();
+    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
+    
 
-    //Config PA0
-    init_GPIO_pin(GPIOA,GPIO_Pin_0,GPIO_Mode_IN_FLOATING,GPIO_Speed_50MHz);
-
-    //config NVIC
-    config_NVIC(EXTI0_IRQn,3);
-
-    //config external interrupt
-    config_EXTIO(GPIO_PortSourceGPIOA,GPIO_PinSource0,EXTI_Line0,
-        EXTI_Mode_Interrupt,EXTI_Trigger_Rising);
-
-    #endif
+    /*SELECT A TEST by commenting / uncommenting these defs*/
+    #define FILE_SCAN
+    #define BMP_SCAN
     
     //MAIN LOOP
     while (1) 
-    { 
-        #ifdef USART_TEST
-        //read incoming
-        int x = uart_read(1,buf,sizeof(buf));
-        //echo if there is something entered into the terminal. 
-        if(x!=0)
-        {
-        uart_write(1,buf,sizeof(buf));
+    {
+        xprintf("Mounting drive\r\n");
+	    fr = f_mount(&FatFs, "", 1);		/* Give a work area to the default drive */
+        xprintf("f_mount completed and returned %d.\r\n",fr);
+        
+        #ifdef FILE_SCAN
+        xprintf("\r\n :::FILE SCAN:::\r\n");
+        xprintf("Checking files on disc...\r\n");
+        scan_files(&path);
+        xprintf("scan_files() completed and returned %d.\r\n",fr);
+
+		    if (fr == FR_OK) 
+            { /* Lights onboard LED if file scan went well */
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+                Delay(2000); //let hold for 2 seconds 
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+
+		    }
+    }
+        #endif
+
+        #ifdef BMP_SCAN
+        xprintf("\r\n :::BMP_SCAN:::\r\n");
+        xprintf("Scanning for BMPs\r\n");
+        bmp_count = find_bmp_files();
+        xprintf("find_bmp_files() returned %d bmp files.\r\n",bmp_count);    
+
+        if (bmp_count>0) 
+        { /* Lights onboard LED if data read well */
+            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+            Delay(2000); //let hold for 2 seconds 
+            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
         }
         #endif
 
-        #ifdef BUTTON_TEST
-        //nothing!
-        #endif
-    }
-
-    return(0);
+        for(;;);
+   return(0);
 }
 
 #ifdef USE_FULL_ASSERT
@@ -133,21 +169,3 @@ void assert_failed(uint8_t* file , uint32_t line)
     while (1);
 }
 #endif
-
-#ifdef BUTTON_TEST
-    void EXTI0_IRQHandler(void)
-    {
-        xprintf("External Interrupt Tripped!\r\n");
-        //if we're tripped
-        if(EXTI_GetITStatus(EXTI_Line0) != RESET)
-        {
-            //toggle LED
-            GPIO_WriteBit(LED_PORT, LED_PIN, (ledval) ? Bit_SET : Bit_RESET);
-            ledval = 1-ledval;            
-            //clear the interrupt
-            EXTI_ClearITPendingBit(EXTI_Line0);
-        }
-
-    }
-#endif
-
