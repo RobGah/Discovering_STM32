@@ -2,7 +2,7 @@
 #define SDCARD_H
 
 FRESULT scan_files(char* path);
-UINT find_bmp_files (void);
+UINT find_bmp_files (char* path);
 
 
 #endif

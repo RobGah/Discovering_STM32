@@ -75,7 +75,7 @@ FATFS FatFs;		/* FatFs work area needed for each volume */
 FIL Fil;			/* File object needed for each open file */
 UINT bmp_count = 0; /* ad oculos*/
 FRESULT fr;         /* FatFs function common result code*/
-char path[] = "";   /* Root Directory path */
+char path[256];   /* Root Directory path */
 
 // xprintf() support
 void myputchar(unsigned char c)
@@ -125,12 +125,17 @@ int main()
     {
         xprintf("Mounting drive\r\n");
 	    fr = f_mount(&FatFs, "", 1);		/* Give a work area to the default drive */
+        if(fr==RES_OK)
+        {
+            strcpy(path,"/");
+        }
         xprintf("f_mount completed and returned %d.\r\n",fr);
+        Delay(500);
         
         #ifdef FILE_SCAN
         xprintf("\r\n :::FILE SCAN:::\r\n");
         xprintf("Checking files on disc...\r\n");
-        scan_files(&path);
+        fr = scan_files(path);
         xprintf("scan_files() completed and returned %d.\r\n",fr);
 
 		    if (fr == FR_OK) 
@@ -138,15 +143,17 @@ int main()
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
                 Delay(2000); //let hold for 2 seconds 
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+                memset(path,0,sizeof(path));
+                strcpy(path,"/");
 
 		    }
-    }
+        Delay(500);
         #endif
 
         #ifdef BMP_SCAN
         xprintf("\r\n :::BMP_SCAN:::\r\n");
         xprintf("Scanning for BMPs\r\n");
-        bmp_count = find_bmp_files();
+        bmp_count = find_bmp_files(path);
         xprintf("find_bmp_files() returned %d bmp files.\r\n",bmp_count);    
 
         if (bmp_count>0) 
@@ -156,8 +163,8 @@ int main()
             GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
         }
         #endif
-
         for(;;);
+    }
    return(0);
 }
 
