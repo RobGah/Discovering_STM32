@@ -54,11 +54,10 @@ UINT find_bmp_files(char* path)
     DIR dj;         /* Directory object */
     FILINFO fno;    /* File information */
     UINT i = 0;     /* Retval for count of BMPs*/
-    f_closedir(&dj);
-    Delay(500);
+
     fr = f_opendir(&dj, path);
     xprintf("f_opendir() returns %d\r\n",fr);
-    fr = f_findfirst(&dj, &fno, "", "?*.bmp\r\n"); /* Start to search for photo files */
+    fr = f_findfirst(&dj, &fno, "", "*.bmp"); /* Start to search for photo files */
     xprintf("f_findfirst() returns %d\r\n",fr);
     if (fr != FR_OK)
     {
