@@ -4,6 +4,9 @@
 #include "xprintf.h"
 #include "sdcard.h"
 #include <stdbool.h>
+#include "bmp.h"
+
+
 
 FRESULT scan_files(char* path)
 {
@@ -75,6 +78,38 @@ UINT scan_bmp_files(char* path)
     return i;
 }  
 
+
+FRESULT parse_BMP_file(char* path)
+{
+    FIL file;
+    FRESULT fr;
+    DIR dj;         /* Directory object */
+    FILINFO fno;    /* File information */
+    UINT br;         /* read count */
+
+    
+    fr = f_opendir(&dj, path);
+    xprintf("f_opendir() returns %d\r\n",fr);
+    fr = f_findfirst(&dj, &fno, "", "*.bmp"); /* Start to search for photo files */
+    xprintf("f_findfirst() returns %d\r\n",fr);
+
+    fr = f_open(&file,fno.fname, FA_READ);
+    xprintf("f_open completed and returned %d\r\n",fr);
+    if (fr == FR_OK) //we good
+    {
+        fr= f_read(&file, (void*)&magic, 2, &br); 
+        xprintf("Magic #'s are %c%c\r\n",magic.magic[0],magic.magic[1]);
+        fr = f_read(&file, (void *) &header , sizeof(header), &br);
+        xprintf("file size %d offset %d\n", header.filesz, !header.bmp_offset);
+        fr= f_read(&file, (void *) &info , sizeof(info),&br);
+        xprintf("Width %d, Height %d, bitspp %d\n", info.width ,info.height , info.bitspp);
+        fr= f_close(&file);
+    }
+
+    f_closedir(&dj);
+
+
+}
 
 
 

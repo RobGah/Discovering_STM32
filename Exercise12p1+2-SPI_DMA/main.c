@@ -119,6 +119,7 @@ int main()
     /*SELECT A TEST by commenting / uncommenting these defs*/
     #define FILE_SCAN
     #define BMP_SCAN
+    #define BMP_PARSE
     
     //MAIN LOOP
     while (1) 
@@ -157,6 +158,20 @@ int main()
         xprintf("scan_bmp_files() returned %d bmp files.\r\n",bmp_count);    
 
         if (bmp_count>0) 
+        { /* Lights onboard LED if data read well */
+            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+            Delay(2000); //let hold for 2 seconds 
+            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+        }
+        #endif
+
+        #ifdef BMP_PARSE
+        xprintf("\r\n :::BMP_SCAN:::\r\n");
+        xprintf("Scanning for BMPs\r\n");
+        fr = parse_BMP_file(path);
+        xprintf("parse_BMP_file() returned %d.\r\n",fr);    
+
+        if (fr==0) 
         { /* Lights onboard LED if data read well */
             GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
             Delay(2000); //let hold for 2 seconds 

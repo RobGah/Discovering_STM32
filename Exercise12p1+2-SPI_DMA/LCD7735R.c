@@ -11,8 +11,6 @@
 
 /*
 
-***REG 1/19/21***
-
 This driver was initially gotten from the book's author who adapted it from the Adafruit 1.8" TFT driver 
 and is based heavily on (and in places like in init() copy-pasted from): 
 
