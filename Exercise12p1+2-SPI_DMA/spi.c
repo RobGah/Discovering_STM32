@@ -4,7 +4,6 @@
 #include <stm32f10x_spi.h>
 #include "spi.h"
 
-#ifndef SPIDMA
 
 void spiInit(SPI_TypeDef *SPIx)
 {
@@ -162,5 +161,4 @@ int spiReadWrite16(SPI_TypeDef *SPIx, uint16_t *rbuf,
     return 1;
 }    
 
-#endif
 

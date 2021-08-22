@@ -48,7 +48,7 @@ FRESULT scan_files(char* path)
     return res;
 } 
 
-UINT find_bmp_files(char* path)
+UINT scan_bmp_files(char* path)
 {
     FRESULT fr;     /* Return value */
     DIR dj;         /* Directory object */
@@ -63,7 +63,6 @@ UINT find_bmp_files(char* path)
     {
         return i;
     }
-    i++; // found 1st? ++
 
     while (fr == FR_OK && fno.fname[0]) {         /* Repeat while an item is found */
         xprintf("%s\n", fno.fname);               /* Print the object name */
@@ -75,5 +74,8 @@ UINT find_bmp_files(char* path)
     f_closedir(&dj);
     return i;
 }  
+
+
+
 
 

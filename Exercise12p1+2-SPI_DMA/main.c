@@ -153,8 +153,8 @@ int main()
         #ifdef BMP_SCAN
         xprintf("\r\n :::BMP_SCAN:::\r\n");
         xprintf("Scanning for BMPs\r\n");
-        bmp_count = find_bmp_files(path);
-        xprintf("find_bmp_files() returned %d bmp files.\r\n",bmp_count);    
+        bmp_count = scan_bmp_files(path);
+        xprintf("scan_bmp_files() returned %d bmp files.\r\n",bmp_count);    
 
         if (bmp_count>0) 
         { /* Lights onboard LED if data read well */
