@@ -55,8 +55,10 @@ I did it while debugging my setup. I have ideas of making a driver for strictly 
 #define ST7735_COLMOD 0x3A
 
 
-#define MADVAL(x) (((x) << 5) | 8) //Works with my 7735R but others say to remove | 8
-//static uint8_t madctlcurrent = MADVAL(MADCTLGRAPHICS);
+#define MADVAL(x) (((x) << 5) | 8) // Works with my 7735R but others say to remove | 8
+// static uint8_t madctlcurrent = MADVAL(MADCTLGRAPHICS);
+
+#define SPI_DMA_EN // Setting to enable / disable SPI-based DMA 
 
 struct ST7735_cmdBuf
 {
@@ -122,7 +124,10 @@ static void LcdWrite(char dc, const char *data, int cnt)
 {
 	GPIO_WriteBit(LCD_PORT, GPIO_PIN_DC, dc); // we use the DC pin to distinguish between data and control sequences
 	GPIO_ResetBits(LCD_PORT, GPIO_PIN_SCE); // select LCD on SPI by pulling its pin low
-	spiReadWrite(SPILCD, 0, data, cnt, LCDSPEED); // send SPI data
+	#ifdef SPI_DMA_EN
+	xchng_datablock(SPILCD,0,data,0,cnt);
+	#else spiReadWrite(SPILCD, 0, data, cnt, LCDSPEED); // send SPI data
+	#endif
 	GPIO_SetBits(LCD_PORT, GPIO_PIN_SCE); // disassert LCD on SPI
 }
 
@@ -131,7 +136,10 @@ static void LcdWrite16(char dc, const uint16_t *data, int cnt)
 {
 	GPIO_WriteBit(LCD_PORT, GPIO_PIN_DC, dc);
 	GPIO_ResetBits(LCD_PORT, GPIO_PIN_SCE);
-	spiReadWrite16(SPILCD, 0, data, cnt, LCDSPEED);
+	#ifdef SPI_DMA_EN
+	xchng_datablock(SPILCD,1,data,0,cnt);
+	#else spiReadWrite16(SPILCD, 0, data, cnt, LCDSPEED);
+	#endif
 	GPIO_SetBits(LCD_PORT, GPIO_PIN_SCE);
 }
 
