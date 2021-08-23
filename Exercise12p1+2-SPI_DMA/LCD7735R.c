@@ -58,8 +58,6 @@ I did it while debugging my setup. I have ideas of making a driver for strictly 
 #define MADVAL(x) (((x) << 5) | 8) // Works with my 7735R but others say to remove | 8
 // static uint8_t madctlcurrent = MADVAL(MADCTLGRAPHICS);
 
-#define SPI_DMA_EN // Setting to enable / disable SPI-based DMA 
-
 struct ST7735_cmdBuf
 {
 	uint8_t command; //ST7735 command byte

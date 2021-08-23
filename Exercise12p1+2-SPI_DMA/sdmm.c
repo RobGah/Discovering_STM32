@@ -49,7 +49,7 @@
 #define RCC_APB2Periph_GPIO_CS RCC_APB2Periph_GPIOA
 #define SD_SPI SPI2 /*change this if we're going for another SPI bus*/
 
-enum spiSpeed Speed = SPI_SLOW; 
+enum spiSpeed Speed = SPI_FAST; // was at slow in 8p1, lets go FAST for 12p1+2
 
 //NOT NEEDED!
 
@@ -148,7 +148,10 @@ void xmit_mmc (
 	UINT bc				/* Number of bytes to send */
 )
 {
-	spiReadWrite(SD_SPI,0,buff,bc,Speed); //load tbuf w/ data to xmit
+	#ifdef SPI_DMA_EN
+	xchng_datablock(SD_SPI,0,buff,0,bc);
+	#else spiReadWrite(SD_SPI,0,buff,bc,Speed); //load tbuf w/ data to xmit
+	#endif
 }
 
 
@@ -163,7 +166,10 @@ void rcvr_mmc (
 	UINT bc		/* Number of bytes to receive */
 )
 {
-	spiReadWrite(SD_SPI,buff,0,bc,Speed); //set buffer pointer to rbuf to read
+	#ifdef SPI_DMA_EN
+	xchng_datablock(SD_SPI,0,0,buff,bc);
+	#else spiReadWrite(SD_SPI,buff,0,bc,Speed); //set buffer pointer to rbuf to read
+	#endif
 }
 
 

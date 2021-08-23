@@ -1,6 +1,8 @@
 #ifndef SPI_H
 #define SPI_H
 
+#define SPI_DMA_EN // Setting to enable / disable SPI-based DMA 
+
 enum spiSpeed
 {
     SPI_SLOW,
