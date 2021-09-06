@@ -10,6 +10,9 @@
 // READ
 int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half) 
 {
+  // ENABLE CLOCKS
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 , ENABLE);
+
   DMA_InitTypeDef DMA_InitStructure;
   uint16_t dummy[] = {0xffff};
 
@@ -24,12 +27,14 @@ int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half)
 
   if(SPIx == SPI1)
   {
+    xprintf("SPI1 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel3;
     SPI_DMA_RX = DMA1_Channel2;
   }
 
   else if(SPIx == SPI2)
   {
+    xprintf("SPI2 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel5;
     SPI_DMA_RX = DMA1_Channel4;
   }
@@ -74,9 +79,9 @@ int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half)
   SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, ENABLE);
 
   // Wait for completion
-
+  xprintf("waiting on TC4 flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-
+  xprintf("flag resolved!\r\n");
   // Disable channels
 
   DMA_Cmd(SPI_DMA_RX, DISABLE);
@@ -88,7 +93,11 @@ int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half)
 }
 
 // WRITE
-int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half) {
+int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half) 
+{
+  // ENABLE CLOCKS
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 , ENABLE);
+
   DMA_InitTypeDef DMA_InitStructure;
   uint16_t dummy[] = {0xffff};
 
@@ -104,13 +113,14 @@ int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half) {
   // Determine SPI DMA path
   if(SPIx == SPI1)
   {
+    xprintf("SPI1 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel3;
     SPI_DMA_RX = DMA1_Channel2;
   }
 
   else if(SPIx == SPI2)
   {
-        xprintf("SPI2 Assigned\r\n"); 
+    xprintf("SPI2 Assigned\r\n"); 
     SPI_DMA_TX = DMA1_Channel5;
     SPI_DMA_RX = DMA1_Channel4;
   }
@@ -147,15 +157,15 @@ int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half) {
 
   // Enable channels
 
-  DMA_Cmd(SPI_DMA_TX, ENABLE);
   DMA_Cmd(SPI_DMA_RX, ENABLE);
+  DMA_Cmd(SPI_DMA_TX, ENABLE);
 
   // Enable SPI TX/RX request
 
   SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, ENABLE);
 
   // Wait for completion
-  xprintf("waiting on TC4 Flag\r\n");
+  xprintf("waiting on TC4 Flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
   xprintf("Flag Resolved!\r\n");
   // Disable channels
@@ -171,6 +181,9 @@ int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half) {
 // EXCHANGE
 int dmaExgBytes(SPI_TypeDef *SPIx, void *rbuf, void *tbuf, unsigned count, int half)
 {
+  // ENABLE CLOCKS
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 , ENABLE);
+
   DMA_InitTypeDef DMA_InitStructure;
   uint16_t dummy[] = {0xffff};
 
@@ -236,8 +249,9 @@ int dmaExgBytes(SPI_TypeDef *SPIx, void *rbuf, void *tbuf, unsigned count, int h
 
   // Wait for completion
 
+  xprintf("Waiting on TC4_flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-
+  xprintf("Flag resolved!\r\n");
   // Disable channels
 
   DMA_Cmd(SPI_DMA_RX, DISABLE);
@@ -259,16 +273,17 @@ int xchng_datablock(SPI_TypeDef *SPIx, int half, const void *tbuf, void *rbuf, u
     }
     if (!tbuf) 
     {
+      xprintf("In DMA Rx\r\n");
       dmaRcvBytes(SPIx, rbuf, count, half);
     } 
     else if (!rbuf) 
     {
-      xprintf("in DMA Tx!\r\n"); 
+      xprintf("In DMA Tx\r\n"); 
       dmaTxBytes(SPIx, tbuf, count, half);
     } 
     else 
     {
-            xprintf("in DMA Rx!\r\n"); 
+      xprintf("in DMA Exg!\r\n"); 
       dmaExgBytes(SPIx, rbuf, tbuf, count, half);
     }
     SPI_DataSizeConfig(SPIx, SPI_DataSize_8b);
