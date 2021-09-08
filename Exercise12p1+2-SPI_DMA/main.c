@@ -117,9 +117,10 @@ int main()
     
 
     /*SELECT A TEST by commenting / uncommenting these defs*/
-    #define FILE_SCAN
-    #define BMP_SCAN
-    #define BMP_PARSE
+    //#define FILE_SCAN
+    //#define BMP_SCAN
+    //#define BMP_PARSE
+    #define BMP_DISP
     
     //MAIN LOOP
     while (1) 
@@ -177,6 +178,12 @@ int main()
             Delay(2000); //let hold for 2 seconds 
             GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
         }
+        #endif
+
+        #ifdef BMP_DISP
+        xprintf("\r\n :::BMP_DISPLAY:::\r\n");
+        fr = get_BMP_image(path);
+        xprintf("get_BMP_image() returned %d.\r\n",fr);    
         #endif
         for(;;);
     }

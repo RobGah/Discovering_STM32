@@ -377,7 +377,7 @@ void ST7735_drawPixel(uint8_t x, uint8_t y, uint16_t pixelcolor)
 	*/
 
 	//set window to any window size - it doesnt matter
-	ST7735_setAddrWindow(x, y, x+1, y+1,MADCTLGRAPHICS); //might not even need to +1 these?
+	ST7735_setAddrWindow(x, y, x, y,MADCTLGRAPHICS); //might not even need to +1 these?
 	ST7735_pushColor(&pixelcolor,1); //single pushColor command
 }
 
@@ -520,4 +520,5 @@ void ST7735_drawCircle(uint8_t centerx, uint8_t centery, uint8_t r,
         } 
     }  
 } 
+
 

@@ -45,6 +45,7 @@ struct bmppixel
 struct bmpfile_magic magic;
 struct bmpfile_header header;
 BITMAPINFOHEADER info;
+struct bmppixel pixel;
 
 #endif
 

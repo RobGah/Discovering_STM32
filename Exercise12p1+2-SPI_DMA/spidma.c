@@ -27,14 +27,14 @@ int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half)
 
   if(SPIx == SPI1)
   {
-    xprintf("SPI1 Assigned\r\n");
+   //xprintf("SPI1 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel3;
     SPI_DMA_RX = DMA1_Channel2;
   }
 
   else if(SPIx == SPI2)
   {
-    xprintf("SPI2 Assigned\r\n");
+    //xprintf("SPI2 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel5;
     SPI_DMA_RX = DMA1_Channel4;
   }
@@ -79,9 +79,9 @@ int dmaRcvBytes(SPI_TypeDef *SPIx, void *rbuf, unsigned count, int half)
   SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, ENABLE);
 
   // Wait for completion
-  xprintf("waiting on TC4 flag...\r\n");
+  //xprintf("waiting on TC4 flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-  xprintf("flag resolved!\r\n");
+  //xprintf("flag resolved!\r\n");
   // Disable channels
 
   DMA_Cmd(SPI_DMA_RX, DISABLE);
@@ -113,14 +113,14 @@ int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half)
   // Determine SPI DMA path
   if(SPIx == SPI1)
   {
-    xprintf("SPI1 Assigned\r\n");
+    //xprintf("SPI1 Assigned\r\n");
     SPI_DMA_TX = DMA1_Channel3;
     SPI_DMA_RX = DMA1_Channel2;
   }
 
   else if(SPIx == SPI2)
   {
-    xprintf("SPI2 Assigned\r\n"); 
+    //xprintf("SPI2 Assigned\r\n"); 
     SPI_DMA_TX = DMA1_Channel5;
     SPI_DMA_RX = DMA1_Channel4;
   }
@@ -165,9 +165,9 @@ int dmaTxBytes(SPI_TypeDef *SPIx, void *tbuf, unsigned count, int half)
   SPI_I2S_DMACmd(SPIx, SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx, ENABLE);
 
   // Wait for completion
-  xprintf("waiting on TC4 Flag...\r\n");
+  //xprintf("waiting on TC4 Flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-  xprintf("Flag Resolved!\r\n");
+  //xprintf("Flag Resolved!\r\n");
   // Disable channels
 
   DMA_Cmd(SPI_DMA_RX, DISABLE);
@@ -249,9 +249,9 @@ int dmaExgBytes(SPI_TypeDef *SPIx, void *rbuf, void *tbuf, unsigned count, int h
 
   // Wait for completion
 
-  xprintf("Waiting on TC4_flag...\r\n");
+  //xprintf("Waiting on TC4_flag...\r\n");
   while (DMA_GetFlagStatus(DMA1_FLAG_TC4) == RESET);
-  xprintf("Flag resolved!\r\n");
+  //xprintf("Flag resolved!\r\n");
   // Disable channels
 
   DMA_Cmd(SPI_DMA_RX, DISABLE);
@@ -266,31 +266,31 @@ int dmaExgBytes(SPI_TypeDef *SPIx, void *rbuf, void *tbuf, unsigned count, int h
 int xchng_datablock(SPI_TypeDef *SPIx, int half, const void *tbuf, void *rbuf, unsigned count) 
 {
   if (count > 4) { 
-    xprintf("count>4\r\n"); 
+    //xprintf("count>4\r\n"); 
     if (half) 
     {
       SPI_DataSizeConfig(SPIx, SPI_DataSize_16b);
     }
     if (!tbuf) 
     {
-      xprintf("In DMA Rx\r\n");
+      //xprintf("In DMA Rx\r\n");
       dmaRcvBytes(SPIx, rbuf, count, half);
     } 
     else if (!rbuf) 
     {
-      xprintf("In DMA Tx\r\n"); 
+      //xprintf("In DMA Tx\r\n"); 
       dmaTxBytes(SPIx, tbuf, count, half);
     } 
     else 
     {
-      xprintf("in DMA Exg!\r\n"); 
+      //xprintf("in DMA Exg!\r\n"); 
       dmaExgBytes(SPIx, rbuf, tbuf, count, half);
     }
     SPI_DataSizeConfig(SPIx, SPI_DataSize_8b);
   } 
   else 
   {
-    xprintf("count<=4\r\n"); 
+    //xprintf("count<=4\r\n"); 
     if (half) 
     {
       spiReadWrite16(SPIx, rbuf, tbuf, count, SPI_FAST);
