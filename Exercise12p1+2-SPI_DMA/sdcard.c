@@ -114,29 +114,19 @@ FRESULT parse_BMP_file(char* path)
 uint16_t convert24to16bitcolor(uint8_t R, uint8_t G, uint8_t B)
 {
     // In 24 bit color, each RGB param is a BYTE 
-    // unsigned char R;
-    // unsigned char G;
-    // unsigned char B;
+    // RRRR RRRR GGGG GGGG BBBB BBBB
+
     uint16_t retval;
 
-    // R = (twentyfourbits & 0xFF); // last byte
-    // G = ((twentyfourbits>>8) & 0xFF); // second to last byte
-    // B = ((twentyfourbits>>16)& 0xFF); // third to last byte
-
-    // // if above doesn't work:
-    // R = ((twentyfourbits>>8) & 0xFF);
-    // G = ((twentyfourbits>>16)& 0xFF);
-    // B = ((twentyfourbits>>24)& 0xFF);
-
     // shift for 5-6-5 (16 bit)
-    R = R>>3;
-    G = G>>2;
-    B = B>>3;
+    R = R>>3; // RRRR RRRR -> 000R RRRR
+    G = G>>2; // GGGG GGGG -> 00GG GGGG
+    B = B>>3; // BBBB BBBB -> 000B BBBB
     
     // combine
-    retval = B;
-    retval = (retval<<6) | G;
-    retval = (retval<<5) | R;
+    retval = B;               // 0000 0000 000B BBBB
+    retval = (retval<<6) | G; // 0000 0BBB BBGG GGGG
+    retval = (retval<<5) | R; // BBBB BGGG GGGR RRRR
 
     return retval;
 
@@ -160,17 +150,22 @@ FRESULT get_BMP_image(char* path)
     xprintf("f_open completed and returned %d\r\n",fr);
     if (fr == FR_OK) //we good
     {
-        fr= f_read(&file, (void*)&magic, 2, &br); 
+        fr= f_read(&file, (void*)&magic, sizeof(magic), &br); 
         xprintf("Magic #'s are %c%c\r\n",magic.magic[0],magic.magic[1]);
         fr = f_read(&file, (void *) &header , sizeof(header), &br);
-        xprintf("file size %d offset %d\n", header.filesz, !header.bmp_offset);
+        xprintf("file size %d offset %d\n", header.filesz, header.bmp_offset);
         fr= f_read(&file, (void *) &info , sizeof(info),&br);
-        xprintf("Width %d, Height %d, bitspp %d\n", info.width ,info.height , info.bitspp);
+        xprintf("Width %d, Height %d, bitspp %d compression %d\r\n"
+            , info.width ,info.height , info.bitspp, info.compress_type);
 
+        // f_close(&file);
+        // Delay(500);
+        // fr = f_open(&file,fno.fname, FA_READ);
+        // fr = f_lseek(&file,header.bmp_offset);
         ST7735_setAddrWindow(0, 0, ST7735_WIDTH-1,ST7735_HEIGHT-1,MADCTLBMP);
-        for (int x = 0; x<ST7735_HEIGHT; x++)
+        for (uint8_t x = 0; x<ST7735_HEIGHT; x++)
         {
-            for(int y = 0; y<ST7735_WIDTH; y++ )
+            for(uint8_t y = 0; y<ST7735_WIDTH; y++ )
             { 
                 fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
                 // xprintf("B char is %X\r\n",pixel.b);
