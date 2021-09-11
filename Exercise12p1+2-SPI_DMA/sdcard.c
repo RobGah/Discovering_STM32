@@ -7,6 +7,7 @@
 #include "bmp.h"
 #include "LCD7735R.h"
 
+static FILINFO fno;
 
 FRESULT scan_files(char* path)
 {
@@ -14,7 +15,6 @@ FRESULT scan_files(char* path)
     FRESULT res;
     DIR dir;
     UINT i;
-    static FILINFO fno;
 
     res = f_opendir(&dir, path);
     xprintf("f_opendir() returns %d\r\n",res);
@@ -53,14 +53,9 @@ FRESULT scan_files(char* path)
 
 UINT scan_bmp_files(char* path)
 {
-    FRESULT fr;     /* Return value */
-    DIR dj;         /* Directory object */
-    FILINFO fno;    /* File information */
     UINT i = 0;     /* Retval for count of BMPs*/
 
-    fr = f_opendir(&dj, path);
-    xprintf("f_opendir() returns %d\r\n",fr);
-    fr = f_findfirst(&dj, &fno, "", "*.bmp"); /* Start to search for photo files */
+    fr = f_findfirst(&dir, &fno, "", "*.bmp"); /* Start to search for photo files */
     xprintf("f_findfirst() returns %d\r\n",fr);
     if (fr != FR_OK)
     {
@@ -69,49 +64,54 @@ UINT scan_bmp_files(char* path)
 
     while (fr == FR_OK && fno.fname[0]) {         /* Repeat while an item is found */
         xprintf("%s\n", fno.fname);               /* Print the object name */
-        fr = f_findnext(&dj, &fno);              /* Search for next item */
+        fr = f_findnext(&dir, &fno);              /* Search for next item */
         xprintf("f_findnext() returns %d\r\n",fr);
         i++;
     }
-
-    f_closedir(&dj);
     return i;
 }  
 
 
 FRESULT parse_BMP_file(char* path)
 {
-    FIL file;
-    FRESULT fr;
-    DIR dj;         /* Directory object */
-    FILINFO fno;    /* File information */
-    UINT br;         /* read count */
-
-    
-    fr = f_opendir(&dj, path);
-    xprintf("f_opendir() returns %d\r\n",fr);
-    fr = f_findfirst(&dj, &fno, "", "*.bmp"); /* Start to search for photo files */
-    xprintf("f_findfirst() returns %d\r\n",fr);
+    UINT br;
+    if(first_file_parsed_flag == FALSE)
+    {
+        fr = f_findfirst(&dir, &fno, "", "*.bmp"); /* Start to search for photo files */
+        xprintf("f_findfirst() returns %d\r\n",fr);
+        first_file_parsed_flag = TRUE;
+    }
+    else
+    {
+        fr = f_findnext(&dir, &fno); /* Onto next photo file */
+        xprintf("f_findnext() returns %d\r\n",fr);
+    }
 
     fr = f_open(&file,fno.fname, FA_READ);
     xprintf("f_open completed and returned %d\r\n",fr);
+
     if (fr == FR_OK) //we good
     {
         fr= f_read(&file, (void*)&magic, 2, &br); 
         xprintf("Magic #'s are %c%c\r\n",magic.magic[0],magic.magic[1]);
         fr = f_read(&file, (void *) &header , sizeof(header), &br);
-        xprintf("file size %d offset %d\n", header.filesz, !header.bmp_offset);
+        xprintf("file size %d offset %d\n", header.filesz, header.bmp_offset);
         fr= f_read(&file, (void *) &info , sizeof(info),&br);
-        xprintf("Width %d, Height %d, bitspp %d\n", info.width ,info.height , info.bitspp);
+        xprintf("Width %d, Height %d, bitspp %d\n compression %d\r\n", 
+            info.width ,info.height , info.bitspp,info.compress_type);
         fr= f_close(&file);
+        return fr;
     }
 
-    f_closedir(&dj);
-
+    else //end of directory - fno.fname is NULL
+    {
+        first_file_parsed_flag == FALSE;
+        return fr;
+    }
 
 }
 
-uint16_t convert24to16bitcolor(uint8_t R, uint8_t G, uint8_t B)
+static uint16_t convert24to16bitcolor(uint8_t R, uint8_t G, uint8_t B)
 {
     // In 24 bit color, each RGB param is a BYTE 
     // RRRR RRRR GGGG GGGG BBBB BBBB
@@ -134,53 +134,43 @@ uint16_t convert24to16bitcolor(uint8_t R, uint8_t G, uint8_t B)
 
 FRESULT get_BMP_image(char* path)
 {
-    FIL file;
-    FRESULT fr;
-    DIR dj;         /* Directory object */
-    FILINFO fno;    /* File information */
-    UINT br;         /* read count */
-    uint16_t pixel_16_bit;
-    
-    fr = f_opendir(&dj, path);
-    xprintf("f_opendir() returns %d\r\n",fr);
-    fr = f_findfirst(&dj, &fno, "", "*.bmp"); /* Start to search for photo files */
-    xprintf("f_findfirst() returns %d\r\n",fr);
-    xprintf("File is : %s\n", fno.fname);               /* Print the object name */
+    UINT br; // read count
+    uint16_t pixel_16_bit; // 16 bit pixel container  
+
+    xprintf("File is : %s\r\n", fno.fname);
+
     fr = f_open(&file,fno.fname, FA_READ);
     xprintf("f_open completed and returned %d\r\n",fr);
+
     if (fr == FR_OK) //we good
     {
-        fr= f_read(&file, (void*)&magic, sizeof(magic), &br); 
-        xprintf("Magic #'s are %c%c\r\n",magic.magic[0],magic.magic[1]);
-        fr = f_read(&file, (void *) &header , sizeof(header), &br);
-        xprintf("file size %d offset %d\n", header.filesz, header.bmp_offset);
-        fr= f_read(&file, (void *) &info , sizeof(info),&br);
-        xprintf("Width %d, Height %d, bitspp %d compression %d\r\n"
-            , info.width ,info.height , info.bitspp, info.compress_type);
+        // go to image data
+        fr = f_lseek(&file,header.bmp_offset);
 
-        // f_close(&file);
-        // Delay(500);
-        // fr = f_open(&file,fno.fname, FA_READ);
-        // fr = f_lseek(&file,header.bmp_offset);
-        ST7735_setAddrWindow(0, 0, ST7735_WIDTH-1,ST7735_HEIGHT-1,MADCTLBMP);
-        for (uint8_t x = 0; x<ST7735_HEIGHT; x++)
+        if(info.height == 160 && info.width == 128 && info.bitspp == 24 && info.compress_type == 0)
         {
-            for(uint8_t y = 0; y<ST7735_WIDTH; y++ )
-            { 
-                fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
-                // xprintf("B char is %X\r\n",pixel.b);
-                // xprintf("G char is %X\r\n",pixel.g);
-                // xprintf("R char is %X\r\n",pixel.r);
-                pixel_16_bit = convert24to16bitcolor(pixel.r,pixel.g,pixel.b);
-                // xprintf("16 bit conversion returned %X\r\n",pixel_16_bit);
-	            ST7735_pushColor(&pixel_16_bit,1); //single pushColor command    
+            ST7735_setAddrWindow(0, 0, ST7735_WIDTH-1,ST7735_HEIGHT-1,MADCTLBMP);
+            for (uint8_t x = 0; x<ST7735_HEIGHT; x++)
+            {
+                for(uint8_t y = 0; y<ST7735_WIDTH; y++ )
+                { 
+                    fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
+                    // xprintf("B char is %X\r\n",pixel.b);
+                    // xprintf("G char is %X\r\n",pixel.g);
+                    // xprintf("R char is %X\r\n",pixel.r);
+                    pixel_16_bit = convert24to16bitcolor(pixel.r,pixel.g,pixel.b);
+                    // xprintf("16 bit conversion returned %X\r\n",pixel_16_bit);
+                    ST7735_pushColor(&pixel_16_bit,1);  
+                }
             }
         }
-    fr= f_close(&file);
-    f_closedir(&dj);
-    return(fr);
+        else
+        {
+            xprintf("ERROR! Image Formatting INVALID!\r\n");
+        }
     }
-    else return(fr);
+    fr= f_close(&file);
+    return(fr);
 }
 
 

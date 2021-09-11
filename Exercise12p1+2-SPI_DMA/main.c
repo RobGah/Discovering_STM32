@@ -70,11 +70,6 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
-// SD Card Variables
-FATFS FatFs;		/* FatFs work area needed for each volume */
-FIL Fil;			/* File object needed for each open file */
-UINT bmp_count = 0; /* ad oculos*/
-FRESULT fr;         /* FatFs function common result code*/
 char path[256];   /* Root Directory path */
 
 // xprintf() support
@@ -119,72 +114,76 @@ int main()
     /*SELECT A TEST by commenting / uncommenting these defs*/
     //#define FILE_SCAN
     //#define BMP_SCAN
-    //#define BMP_PARSE
+    #define BMP_PARSE
     #define BMP_DISP
     
     //MAIN LOOP
+    xprintf("Mounting drive\r\n");
+    fr = f_mount(&FatFs, "", 1);		/* Give a work area to the default drive */
+    if(fr==RES_OK)
+    {
+        strcpy(path,"/");
+    }
+    xprintf("f_mount completed and returned %d.\r\n",fr);
+    Delay(500);
     while (1) 
     {
-        xprintf("Mounting drive\r\n");
-	    fr = f_mount(&FatFs, "", 1);		/* Give a work area to the default drive */
-        if(fr==RES_OK)
+        fr = f_opendir(&dir, path);
+        xprintf("f_opendir() returns %d\r\n",fr);
+        if(fr == RES_OK)
         {
-            strcpy(path,"/");
-        }
-        xprintf("f_mount completed and returned %d.\r\n",fr);
-        Delay(500);
-        
-        #ifdef FILE_SCAN
-        xprintf("\r\n :::FILE SCAN:::\r\n");
-        xprintf("Checking files on disc...\r\n");
-        fr = scan_files(path);
-        xprintf("scan_files() completed and returned %d.\r\n",fr);
+            #ifdef FILE_SCAN
+            xprintf("\r\n :::FILE SCAN:::\r\n");
+            xprintf("Checking files on disc...\r\n");
+            fr = scan_files(path);
+            xprintf("scan_files() completed and returned %d.\r\n",fr);
 
-		    if (fr == FR_OK) 
-            { /* Lights onboard LED if file scan went well */
+                if (fr == FR_OK) 
+                { /* Lights onboard LED if file scan went well */
+                    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+                    Delay(2000); //let hold for 2 seconds 
+                    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+                    memset(path,0,sizeof(path));
+                    strcpy(path,"/");
+
+                }
+            Delay(500);
+            #endif
+
+            #ifdef BMP_SCAN
+            xprintf("\r\n :::BMP_SCAN:::\r\n");
+            xprintf("Scanning for BMPs\r\n");
+            bmp_count = scan_bmp_files(path);
+            xprintf("scan_bmp_files() returned %d bmp files.\r\n",bmp_count);    
+
+            if (bmp_count>0) 
+            { /* Lights onboard LED if data read well */
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
                 Delay(2000); //let hold for 2 seconds 
                 GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
-                memset(path,0,sizeof(path));
-                strcpy(path,"/");
+            }
+            #endif
 
-		    }
-        Delay(500);
-        #endif
+            #ifdef BMP_PARSE
+            xprintf("\r\n :::BMP_parse:::\r\n");
+            xprintf("Scanning for BMPs\r\n");
+            fr = parse_BMP_file(path);
+            xprintf("parse_BMP_file() returned %d.\r\n",fr);    
 
-        #ifdef BMP_SCAN
-        xprintf("\r\n :::BMP_SCAN:::\r\n");
-        xprintf("Scanning for BMPs\r\n");
-        bmp_count = scan_bmp_files(path);
-        xprintf("scan_bmp_files() returned %d bmp files.\r\n",bmp_count);    
+            if (fr==0) 
+            { /* Lights onboard LED if data read well */
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
+                Delay(2000); //let hold for 2 seconds 
+                GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+            }
+            #endif
 
-        if (bmp_count>0) 
-        { /* Lights onboard LED if data read well */
-            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
-            Delay(2000); //let hold for 2 seconds 
-            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
+            #ifdef BMP_DISP
+            xprintf("\r\n :::BMP_DISPLAY:::\r\n");
+            fr = get_BMP_image(path);
+            xprintf("get_BMP_image() returned %d.\r\n",fr);    
+            #endif
         }
-        #endif
-
-        #ifdef BMP_PARSE
-        xprintf("\r\n :::BMP_SCAN:::\r\n");
-        xprintf("Scanning for BMPs\r\n");
-        fr = parse_BMP_file(path);
-        xprintf("parse_BMP_file() returned %d.\r\n",fr);    
-
-        if (fr==0) 
-        { /* Lights onboard LED if data read well */
-            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_SET); //ON YAY
-            Delay(2000); //let hold for 2 seconds 
-            GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET); //Off
-        }
-        #endif
-
-        #ifdef BMP_DISP
-        xprintf("\r\n :::BMP_DISPLAY:::\r\n");
-        fr = get_BMP_image(path);
-        xprintf("get_BMP_image() returned %d.\r\n",fr);    
-        #endif
         for(;;);
     }
    return(0);
