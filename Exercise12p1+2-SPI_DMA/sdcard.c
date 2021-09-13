@@ -21,18 +21,18 @@ FRESULT scan_files(char* path)
     
     if (res == FR_OK) {
         for (;;) {
-            res = f_readdir(&dir, &fno);                   /* Read a directory item */
+            res = f_readdir(&dir, &fno); // Read a directory item 
             xprintf("f_readdir() returns %d\r\n",res);
             if (res != FR_OK || fno.fname[0] == 0) 
             {
                 xprintf("breaking 1!\r\n");
-                break;  /* Break on error or end of dir */
+                break;  // Break on error or end of dir 
             }
-            if (fno.fattrib & AM_DIR)  /* It is a directory */
+            if (fno.fattrib & AM_DIR)  // It is a directory 
             {                   
                 i = strlen(path);
-                xsprintf(&path[i], "/%s", fno.fname); /* xprintf.h is a hero */
-                res = scan_files(path);                    /* Enter the directory */
+                xsprintf(&path[i], "/%s", fno.fname); // xprintf.h is a hero 
+                res = scan_files(path);                    // Enter the directory 
                 if (res != FR_OK) 
                 {
                     xprintf("breaking 2!\r\n");
@@ -41,7 +41,7 @@ FRESULT scan_files(char* path)
                 path[i] = 0;
             } 
             else 
-            {                                       /* It is a file. */
+            {                                       // It is a file.
                 xprintf("%s/%s\n", path, fno.fname);
             }
         }
@@ -53,18 +53,19 @@ FRESULT scan_files(char* path)
 
 UINT scan_bmp_files(char* path)
 {
-    UINT i = 0;     /* Retval for count of BMPs*/
+    UINT i = 0;     // Retval for count of BMPs
 
-    fr = f_findfirst(&dir, &fno, "", "*.bmp"); /* Start to search for photo files */
+    fr = f_findfirst(&dir, &fno, "", "*.bmp"); // Start to search for photo files 
     xprintf("f_findfirst() returns %d\r\n",fr);
     if (fr != FR_OK)
     {
         return i;
     }
 
-    while (fr == FR_OK && fno.fname[0]) {         /* Repeat while an item is found */
-        xprintf("%s\n", fno.fname);               /* Print the object name */
-        fr = f_findnext(&dir, &fno);              /* Search for next item */
+    while (fr == FR_OK && fno.fname[0]) 
+    {                                             // Repeat while an item is found
+        xprintf("%s\n", fno.fname);               // Print the object name
+        fr = f_findnext(&dir, &fno);              // Search for next item 
         xprintf("f_findnext() returns %d\r\n",fr);
         i++;
     }
@@ -75,22 +76,22 @@ UINT scan_bmp_files(char* path)
 FRESULT parse_BMP_file(char* path)
 {
     UINT br;
-    if(first_file_parsed_flag == FALSE)
+    if(first_file_parsed_flag == 0)
     {
-        fr = f_findfirst(&dir, &fno, "", "*.bmp"); /* Start to search for photo files */
+        fr = f_findfirst(&dir, &fno, "", "*.bmp"); // Start to search for photo files 
         xprintf("f_findfirst() returns %d\r\n",fr);
-        first_file_parsed_flag = TRUE;
+        first_file_parsed_flag = 1;
     }
     else
     {
-        fr = f_findnext(&dir, &fno); /* Onto next photo file */
+        fr = f_findnext(&dir, &fno); // Onto next photo file
         xprintf("f_findnext() returns %d\r\n",fr);
     }
 
     fr = f_open(&file,fno.fname, FA_READ);
     xprintf("f_open completed and returned %d\r\n",fr);
 
-    if (fr == FR_OK) //we good
+    if (fr == FR_OK) // if we open the file successfully
     {
         fr= f_read(&file, (void*)&magic, 2, &br); 
         xprintf("Magic #'s are %c%c\r\n",magic.magic[0],magic.magic[1]);
@@ -105,7 +106,7 @@ FRESULT parse_BMP_file(char* path)
 
     else //end of directory - fno.fname is NULL
     {
-        first_file_parsed_flag == FALSE;
+        first_file_parsed_flag == 0;
         return fr;
     }
 
@@ -147,12 +148,13 @@ FRESULT get_BMP_image(char* path)
         // go to image data
         fr = f_lseek(&file,header.bmp_offset);
 
+        // massive conditional to check that our file complies
         if(info.height == 160 && info.width == 128 && info.bitspp == 24 && info.compress_type == 0)
         {
             ST7735_setAddrWindow(0, 0, ST7735_WIDTH-1,ST7735_HEIGHT-1,MADCTLBMP);
             for (uint8_t x = 0; x<ST7735_HEIGHT; x++)
             {
-                for(uint8_t y = 0; y<ST7735_WIDTH; y++ )
+                for(uint8_t y = 0; y<ST7735_WIDTH; y++)
                 { 
                     fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
                     // xprintf("B char is %X\r\n",pixel.b);
@@ -166,7 +168,7 @@ FRESULT get_BMP_image(char* path)
         }
         else
         {
-            xprintf("ERROR! Image Formatting INVALID!\r\n");
+            xprintf("ERROR! Image %c Formatting INVALID!\r\n",fno.fname);
         }
     }
     fr= f_close(&file);
