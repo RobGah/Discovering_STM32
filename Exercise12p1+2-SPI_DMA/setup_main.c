@@ -13,22 +13,22 @@
 -A work in progress!
 */
 
-// Timer code
-static __IO uint32_t TimingDelay;
+// Timer code - COMMENTED OUT FOR EXERCISE 12 and TIME TESTING!
+// static __IO uint32_t TimingDelay;
 
-void Delay(uint32_t nTime)
-{
-    TimingDelay = nTime;
-    while(TimingDelay !=0);
-}
+// void Delay(uint32_t nTime)
+// {
+//     TimingDelay = nTime;
+//     while(TimingDelay !=0);
+// }
 
-void SysTick_Handler(void)
-{
-    if (TimingDelay != 0x00)
-    {
-        TimingDelay--;
-    }
-}
+// void SysTick_Handler(void)
+// {
+//     if (TimingDelay != 0x00)
+//     {
+//         TimingDelay--;
+//     }
+// }
 
 //initialize onboard LED (sign of life)
 void init_onboard_led(void)

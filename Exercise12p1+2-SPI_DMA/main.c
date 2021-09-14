@@ -3,11 +3,15 @@
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_spi.h>
 #include <stm32f10x_usart.h>
+#include <stm32f10x_exti.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stm32f10x_tim.h>
+#include "interrupts.h"
 #include "diskio.h"
 #include "uart.h"
+#include "timers.h"
 #include "spi.h"
 #include "LCD7735R.h"
 #include "setup_main.h"
@@ -73,8 +77,21 @@ GND     GND         GND
 #define BMP_BUFFER_SIZE 128
 
 char path[256];                           // Root directory path
-uint16_t bytestream[BMP_BUFFER_SIZE];    // buffer to hold 16-bit BMP data
 
+uint16_t bytestream[BMP_BUFFER_SIZE];    //default buffer to hold 16-bit BMP data
+
+#define TIME_TEST
+
+#ifdef TIME_TEST
+uint16_t bytestream8[8];     // 8 buffer to hold 16-bit BMP data 
+uint16_t bytestream16[16];    // 16 buffer to hold 16-bit BMP data
+uint16_t bytestream32[32];    // 32 buffer to hold 16-bit BMP data
+uint16_t bytestream64[64];    // 64 buffer to hold 16-bit BMP data
+uint16_t bytestream256[256];  // 256 buffer to hold 16-bit BMP data
+#endif
+
+
+uint32_t ms_count = 0;
 // xprintf() support
 void myputchar(unsigned char c)
 {
@@ -94,6 +111,8 @@ int main()
     {
         while(1);
     }
+
+    config_NVIC(SysTick_IRQn,3);
 
     //setup xprintf - I like these func's better than what the book suggests
     xdev_in(mygetchar); 
@@ -118,7 +137,8 @@ int main()
     //#define FILE_SCAN
     //#define BMP_SCAN
     //define BMP_PARSE
-    #define BMP_DISP
+    //#define BMP_DISP
+    //NOTE: TIME_TEST is defined at top of file
     
     //MAIN LOOP
     xprintf("Mounting drive\r\n");
@@ -148,7 +168,6 @@ int main()
             xprintf("Checking files on disc...\r\n");
             fr = scan_files(path);
             xprintf("scan_files() completed and returned %d.\r\n",fr);   
-            }
             #endif
 
             #ifdef BMP_SCAN
@@ -179,10 +198,100 @@ int main()
             f_closedir(&dir);
             Delay(100);
             f_opendir(&dir,&path);
-            #endif
             }
-        }
+            #endif
+
+
+            #ifdef TIME_TEST
+            while(1)
+            {
+                xprintf("\r\n :::TIME TEST:::\r\n");
+                xprintf("8 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream8);
+                xprintf("Image w/ %d buffer size DMA took %d ms to load\r\n",sizeof(bytestream8), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                xprintf("16 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream16);
+                xprintf("Image w/ %d buffer size DMA took %d ms to load\r\n",sizeof(bytestream16), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                xprintf("32 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream32);
+                xprintf("Image w/ %d buffer size DMA took %d ms to \r\n",sizeof(bytestream32), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                xprintf("64 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream64);
+                xprintf("Image w/ %d buffer size DMA took %d ms to load\r\n",sizeof(bytestream64), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                xprintf("128 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream);
+                xprintf("Image w/ %d buffer size DMA took %d ms to load\r\n",sizeof(bytestream), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                xprintf("256 byte:\r\n");
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image_DMA(&path,&bytestream256);
+                xprintf("Image w/ %d buffer size DMA took %d ms to load\r\n",sizeof(bytestream256), ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+
+                fr = parse_BMP_file(&path);
+                ms_count = 0;
+                fr = get_BMP_image(&path);
+                xprintf("Image w/o DMA took %d ms to load\r\n", ms_count);
+                xprintf("get_BMP_image() returned %d.\r\n",fr);
+                
+                //Reset Everything
+                f_closedir(&dir);
+                Delay(1000);
+                f_opendir(&dir,&path);
+            }
+            #endif
         for(;;);
+        }
     }
    return(0);
 }
@@ -195,3 +304,22 @@ void assert_failed(uint8_t* file , uint32_t line)
     while (1);
 }
 #endif
+
+// Timer code
+static __IO uint32_t TimingDelay;
+
+void Delay(uint32_t nTime)
+{
+    TimingDelay = nTime;
+    while(TimingDelay !=0);
+}
+
+void SysTick_Handler(void)
+{
+    if (TimingDelay != 0x00)
+    {
+        TimingDelay--;
+        ms_count++; //increment ms_count on every 1ms SysTick
+    }
+}
+
