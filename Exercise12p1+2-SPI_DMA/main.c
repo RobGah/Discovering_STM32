@@ -70,7 +70,10 @@ GND     GND         GND
 
 #define USE_FULL_ASSERT
 
-char path[256];   /* Root Directory path */
+#define BMP_BUFFER_SIZE 128
+
+char path[256];                           // Root directory path
+uint16_t bytestream[BMP_BUFFER_SIZE];    // buffer to hold 16-bit BMP data
 
 // xprintf() support
 void myputchar(unsigned char c)
@@ -168,8 +171,8 @@ int main()
             {
                 for(uint8_t i = 0; i<bmp_count;i++)
                 {
-                    fr = parse_BMP_file(path);
-                    fr = get_BMP_image(path);
+                    fr = parse_BMP_file(&path);
+                    fr = get_BMP_image_DMA(&path,&bytestream);
                     xprintf("get_BMP_image() returned %d.\r\n",fr);
                     Delay(5000); // 5 seconds per pic    
                 }

@@ -7,7 +7,6 @@
 #include "bmp.h"
 #include "LCD7735R.h"
 
-static FILINFO fno;
 
 FRESULT scan_files(char* path)
 {
@@ -176,5 +175,74 @@ FRESULT get_BMP_image(char* path)
 }
 
 
+FRESULT get_BMP_image_DMA(char* path, uint16_t *byte_buffer)
+{
+    UINT br; // read count
+    uint16_t pixel_16_bit; // 16 bit pixel container  
+
+    xprintf("File is : %s\r\n", fno.fname);
+
+    fr = f_open(&file,fno.fname, FA_READ);
+    xprintf("f_open completed and returned %d\r\n",fr);
+
+    if (fr == FR_OK) //we good
+    {
+        // go to image data
+        fr = f_lseek(&file,header.bmp_offset);
+
+        // massive conditional to check that our file complies
+        if(info.height == 160 && info.width == 128 && info.bitspp == 24 && info.compress_type == 0)
+        {
+            // set our window
+            ST7735_setAddrWindow(0, 0, ST7735_WIDTH-1,ST7735_HEIGHT-1,MADCTLBMP);
+            uint32_t n = 0;
+            // while we have bmp bytes to write 
+            xprintf("file size is %d\r\n", header.filesz);
+            xprintf("bmp offset is %d\r\n",header.bmp_offset);
+
+            while( n < (ST7735_WIDTH*ST7735_HEIGHT))
+            {
+                // if the remaining bytes to be written to the screen 
+                // is >= the buffer size used to write to the screen 
+                if(((ST7735_HEIGHT*ST7735_WIDTH)-n) >= sizeof(byte_buffer))
+                {
+                    for(uint16_t i=0; i<sizeof(byte_buffer); i++) // pack our buffer
+                    {
+                        fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
+                        // xprintf("B char is %X\r\n",pixel.b);
+                        // xprintf("G char is %X\r\n",pixel.g);
+                        // xprintf("R char is %X\r\n",pixel.r);
+                        pixel_16_bit = convert24to16bitcolor(pixel.r,pixel.g,pixel.b);
+                        // xprintf("16 bit conversion returned %X\r\n",pixel_16_bit);
+                        byte_buffer[i] = pixel_16_bit;
+                        n++;
+                    }
+                    ST7735_pushColor(byte_buffer,sizeof(byte_buffer));
+                    // 0 out the buffer after each use
+                    // Maybe a little crazy, but whatever 
+                    memset(byte_buffer,0,sizeof(byte_buffer)); 
+                }
+                else
+                {
+                    fr = f_read(&file, (void *) &pixel,sizeof(pixel),&br);
+                    // xprintf("B char is %X\r\n",pixel.b);
+                    // xprintf("G char is %X\r\n",pixel.g);
+                    // xprintf("R char is %X\r\n",pixel.r);
+                    pixel_16_bit = convert24to16bitcolor(pixel.r,pixel.g,pixel.b);
+                    // xprintf("16 bit conversion returned %X\r\n",pixel_16_bit);
+                    ST7735_pushColor(&pixel_16_bit,1);
+                    n++;
+                }
+            }
+        }
+        else
+        {
+            xprintf("ERROR! Image %s Formatting INVALID!\r\n",fno.fname);
+        }
+    }
+    
+    fr= f_close(&file);
+    return(fr);
+}
 
 
