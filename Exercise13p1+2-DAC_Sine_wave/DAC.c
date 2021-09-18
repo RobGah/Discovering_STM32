@@ -1,7 +1,10 @@
 #include <stm32f10x_dac.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x.h>
+#include <stdint.h>
 #include <stm32f10x_rcc.h>
+#include "dac.h"
+
 
 int DAC_init(uint32_t channel)
 {

@@ -9,9 +9,9 @@ LDLIBS += -lm
 # object files
 
 OBJS=  $(STARTUP) main.o
-OBJS += ff.o spidma.o spi.o uart.o sdmm.o setup_main.o ffsystem.o ffunicode.o LCD7735R.o xprintf.o
+OBJS += spidma.o spi.o uart.o setup_main.o xprintf.o
 OBJS += stm32f10x_gpio.o stm32f10x_rcc.o stm32f10x_usart.o misc.o interrupts.o stm32f10x_exti.o
-OBJS += stm32f10x_spi.o stm32f10x_dma.o core_cm3.o sdcard.o stm32f10x_tim.o timers.o
+OBJS += stm32f10x_spi.o stm32f10x_dma.o stm32f10x_tim.o timers.o stm32f10x_dac.o dac.o waveform.o
 
 # include common make file
 include $(TEMPLATEROOT)/Makefile.common

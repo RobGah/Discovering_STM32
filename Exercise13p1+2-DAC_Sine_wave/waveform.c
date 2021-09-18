@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include "dac.h"
 
 //easy single file gcc compile : "gcc -g -Wall -owaveform waveform.c"
 // and run w/ "./waveform.exe"
@@ -27,7 +28,6 @@ void gen_sine_wave(uint16_t * wavetable, uint16_t num_samples,uint16_t min_amp, 
         // wave[i] = sin(2*pi*freq*t)
         // assume freq=1? 
         sin_wave[i]= sin(2*acos(-1)*(float)(i/(float)num_samples));
-        printf("%f\r\n",sin_wave[i]);
     }
 
     // Step 2: map samples from sine wave table to min and max
@@ -39,10 +39,15 @@ void gen_sine_wave(uint16_t * wavetable, uint16_t num_samples,uint16_t min_amp, 
 
 }
 
+#define USE_APP
+
+#ifndef USE_APP
+
 uint16_t wave[100];
 uint16_t num_samples = 100;
 uint16_t min_amp = 512;
 uint16_t max_amp = 1536;
+
 
 int main()
 {
@@ -53,3 +58,4 @@ int main()
     }
     return 0;
 }
+#endif
