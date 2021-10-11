@@ -15,47 +15,27 @@
 #include "spi.h"
 #include "setup_main.h"
 #include "xprintf.h"
-#include "dac.h""
+#include "dac.h"
 
 /*
-
-See: http://elm-chan.org/fsw/ff/00index_e.html
-
 Remarks:
--12p1 is easy. 12p2 is a pretty brutal and involved exercise. Very challenging. 
--I lumped the 2 exercises together because it just makes sense. 
+
+SKIPPING EXERCISE AS DAC ISN'T SUPPORTED ON the Blue Pill AND THE VL DISCO BOARD SUCKS
+
+- BLUE PILL DOES NOT HAVE AN ONBOARD DAC :(
+- Struggled to try to get a STM32VL disco board up and running, but open-source STLink
+    and my computer hate it. It's got a STLINK V1 onboard and despite the docs, I'm 
+    skeptical that the openocd st-link utility actually supports V1 at all
+- Pretty bummed this can't be realized on the blue pill board and doubly bummed 
+    that the VL disco board is cantankerous. 
 
 Setup:
 
-ST7735R- Base LCD PCBA is connected to the STM32 "Blue Pill" by way of:
-
-LCD     BluePill    Function
-VCC     5V          Power
-BKL     PA1         Backlight Control
-RESET   PA3         LCD Reset
-RS      PA4         Data/Control Toggle
-MISO    PB14        SlaveOut
-MOSI    PB15        SlaveIn
-SCLK    PB13        Clock for SPI2
-LCD CS  PA5         LCD Select 
-SD_CS   PA6         SD card Select
-GND     GND         Ground
+Just the Blue Pill.
 
 Strategy:
--Bonus points if we can HW flow control working w/ xprintf!
--Get spidma.c working (hopefully)
--Get elm-chan's FatFs to parse the SD card for bmp files. 
-    Ensure that we can identify them on disc. 
-    Can do this with spi.c first just to prove it out.
--Test the FatFS SD card bmp file identifier w/ SPIDMA.c just to prove it works
--Next, parse each file for its file info
-    Look into using parseBMP() from author
--Finally, feed the BMP pic bytes to the LCD screen.
-    Will need to convert 24 bit BMP to 16 bit BMP. See author's remarks.
-    Should reject images that are not 128x160 in size and 24 bit color. Test this.
-    Loop thru the pictures on the card. Forever. 
--Write a timer routine to measure the time to display an image for different DMA block sizes 
 
+Wrote both a function and a program to generate sine wave data.
 
 For UART Debug, I'm using:
 
