@@ -63,8 +63,8 @@ void init_GPIO_pin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pinx, int GPIO_Mode, int G
     GPIO_StructInit(&GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pinx;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed; 
     GPIO_Init(GPIOx, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 
     //GPIO_WriteBit(GPIOx, GPIO_Pinx, Bit_RESET); //set to 0 initially
 }

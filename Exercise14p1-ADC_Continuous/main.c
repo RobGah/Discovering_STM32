@@ -5,6 +5,7 @@
 #include <stm32f10x_usart.h>
 #include <stm32f10x_exti.h>
 #include <stm32f10x_dac.h>
+#include <stm32f10x_adc.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -15,21 +16,12 @@
 #include "spi.h"
 #include "setup_main.h"
 #include "xprintf.h"
-#include "dac.h"
+#include "adc.h"
 
 /*
 Remarks:
-
-SKIPPING EXERCISE AS DAC ISN'T SUPPORTED ON the Blue Pill AND THE VL DISCO BOARD SUCKS
-
-- BLUE PILL DOES NOT HAVE AN ONBOARD DAC :(
-- Struggled to try to get a STM32VL disco board up and running, but open-source STLink
-    and my computer hate it. It's got a STLINK V1 onboard and despite the docs, I'm 
-    skeptical that the openocd st-link utility actually supports V1 at all
-- Pretty bummed this can't be realized on the blue pill board and doubly bummed 
-    that the VL disco board is cantankerous. 
-
-Setup:
+-Simple continuous ADC read of the PA6 pin.
+-If we're >1.65V, we light an LED. If we're <1.65V, we turn it off. 
 
 Just the Blue Pill.
 
@@ -50,6 +42,7 @@ GND     GND         GND
 */
 
 #define USE_FULL_ASSERT
+#define ADC_MAX_VALUE (2^12)
 
 // xprintf() support
 void myputchar(unsigned char c)
@@ -60,15 +53,6 @@ unsigned char mygetchar ()
 {
     return uart_getc(USART1);
 }
-
-// Sine wave def's
-#define NUM_SAMPLES     100
-#define MIN_AMP         512
-#define MAX_AMP         1536
-
-bool ledval = false;
-uint16_t wavetable[NUM_SAMPLES];
-int wavept_cnt = 0;
 
 
 int main()
@@ -89,50 +73,29 @@ int main()
 
     // start LED
     init_onboard_led();
-    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
 
-    // Timer Init
-    // This is 'close enough' - did both math (see worksheet)
-    // and verified with mikro calculator program for timers
-    timer_init(TIM3, RCC_APB1Periph_TIM3, 18000000, 
-        408, TIM_CounterMode_Up);
-
-    // Config output to trigger on an update
-    TIM_SelectOutputTrigger(TIM3 , TIM_TRGOSource_Update);
-    TIM_ITConfig(TIM3 , TIM_IT_Update , ENABLE);
-    TIM_Cmd(TIM3 , ENABLE); // why not
-
-    // Enable Interrupt
-    config_NVIC(TIM3_IRQn,3);
-
-    // INIT DAC
-    DAC_init_w_Trig(DAC_Channel_1,DAC_Trigger_T3_TRGO);
-
-    // Generate waveform samples
-    gen_sine_wave(&wavetable, NUM_SAMPLES, MIN_AMP, MAX_AMP);
-    
+    uint16_t ain = 0;
+    adc_init_single(GPIOA,GPIO_Pin_7,ADC1,ADC_Channel_7);
+    ADC_SoftwareStartConvCmd(ADC1,ENABLE); // THIS IS THE MISSING PIECE
     //MAIN LOOP
     while (1) 
     {
-       //nothing!
+        // wait for conversion to complete
+        // while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
+        
+        ain = ADC_GetConversionValue(ADC1);
+        
+        //clear EOC flag
+        //ADC_ClearFlag(ADC1, ADC_FLAG_EOC);
+        
+        xprintf("Current Value is %d\r\n", ain);
+        if(ain>=(3800)) // arbitraty - input voltage varies w/ pot used.
+        {
+            GPIO_WriteBit(LED_PORT,LED_PIN,Bit_RESET);
+        }
+        else GPIO_WriteBit(LED_PORT,LED_PIN,Bit_SET);
     }
    return(0);
-}
-
-void TIM3_IRQHandler(void)
-{
-    if(wavept_cnt>=NUM_SAMPLES)
-    {
-        wavept_cnt=0; // reset and clear
-    }
-
-    // Give DAC a datapoint every 1ms
-    DAC_SetChannel1Data(DAC_Align_12b_L,wavetable[wavept_cnt]);
-    wavept_cnt++;
-    Delay(1);
-        
-    TIM_ClearITPendingBit(TIM3 ,TIM_IT_Update);
-
 }
 
 #ifdef USE_FULL_ASSERT
