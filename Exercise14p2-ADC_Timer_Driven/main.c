@@ -110,7 +110,9 @@ void assert_failed(uint8_t* file , uint32_t line)
 }
 #endif
 
-void ADC1_2_IRQHandler()
+
+/* weirdly enough this works and ADC1_2_IRQHandler doesn't */
+void ADC1_IRQHandler() 
 {
 // read ADC DR and set LED accordingly
 
