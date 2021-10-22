@@ -5,6 +5,7 @@
 #include <stm32f10x_usart.h>
 #include <stm32f10x_exti.h>
 #include <stm32f10x_dac.h>
+#include <stm32f10x_dma.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -58,12 +59,13 @@ unsigned char mygetchar ()
 }
 
 // Sine wave def's
-#define NUM_SAMPLES     100
+#define WAVETABLE_NUM_SAMPLES     100
 #define MIN_AMP         512
 #define MAX_AMP         1536
 
 bool ledval = false;
-uint16_t wavetable[NUM_SAMPLES];
+uint16_t wavetable[WAVETABLE_NUM_SAMPLES];
+uint16_t outbuf[WAVETABLE_NUM_SAMPLES];
 int wavept_cnt = 0;
 
 
@@ -99,13 +101,14 @@ int main()
     TIM_Cmd(TIM3 , ENABLE); // why not
 
     // Enable Interrupt
-    config_NVIC(TIM3_IRQn,3);
+    config_NVIC(DMA1_Channel3_IRQn,0);
 
     // INIT DAC
     DAC_init_w_Trig(DAC_Channel_1,DAC_Trigger_T3_TRGO);
-
-    // Generate waveform samples
-    gen_sine_wave(&wavetable, NUM_SAMPLES, MIN_AMP, MAX_AMP);
+    init_dac_dma(outbuf,WAVETABLE_NUM_SAMPLES);
+    // Generate waveform samples for wavetable and initial outbuf 
+    gen_sine_wave(&wavetable, WAVETABLE_NUM_SAMPLES, MIN_AMP, MAX_AMP);
+    gen_sine_wave(&outbuf,WAVETABLE_NUM_SAMPLES,MIN_AMP, MAX_AMP);
     
     //MAIN LOOP
     while (1) 
@@ -115,20 +118,23 @@ int main()
    return(0);
 }
 
-void TIM3_IRQHandler(void)
+void DMA1_Channel3_IRQHandler(void)
 {
-    if(wavept_cnt>=NUM_SAMPLES)
-    {
-        wavept_cnt=0; // reset and clear
+    if (DMA_GetITStatus(DMA1_IT_TC3))
+    {   
+        // Transfer complete
+        for (int i = WAVETABLE_NUM_SAMPLES /2; i < WAVETABLE_NUM_SAMPLES; i++)
+        outbuf[i] = wavetable[i];
+        //completed ++; // why do I care about counting completions? 
+        DMA_ClearITPendingBit(DMA1_IT_TC3);
     }
-
-    // Give DAC a datapoint every 1ms
-    DAC_SetChannel1Data(DAC_Align_12b_L,wavetable[wavept_cnt]);
-    wavept_cnt++;
-    Delay(1);
-        
-    TIM_ClearITPendingBit(TIM3 ,TIM_IT_Update);
-
+    else if (DMA_GetITStatus(DMA1_IT_HT3))
+    {   
+        // Half Transfer complete
+        for (int i = 0; i < WAVETABLE_NUM_SAMPLES/2; i++)
+        outbuf[i] = wavetable[i];
+        DMA_ClearITPendingBit(DMA1_IT_HT3);
+    }
 }
 
 #ifdef USE_FULL_ASSERT

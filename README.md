@@ -3,13 +3,15 @@ Discovering the STM32 Microcontroller - Worked Problems using the STM32 "Blue Pi
 A repo of worked examples from "Discovering the STM32 Microcontroller by Geoffery Brown.
 This repo is a work-in-progress. My goal is to create a solution for every example in the book using the STM32F193C8T6 "Blue Pill" board commonly found online. 
 
-The author uses the STM32 VL series discovery board in the book but thus far I've found it easy and relatively equivalent and painless to use the Blue Pill board w/ an external STLink V2 dongle. Any hardware peripherals required that are native to the STM32VL Discovery have been added externally to my setup (i.e. buttons and LEDs, STLink/V2 debugger). There are minor differences in clock speed (Blue pill's STMF103C8T6 clock is 72MHz vs 24MHz on STM32VL) and peripherals (e.g. blue pill's STMF103C8T6 doesn't have a DAC onboard). Also, change:
+The author uses the STM32 VL series discovery board in the book but thus far I've found it easy and relatively equivalent and painless to use the Blue Pill board w/ an external STLink V2 dongle. Any hardware peripherals required that are native to the STM32VL Discovery have been added externally to my setup (i.e. buttons and LEDs, STLink/V2 debugger). There are minor differences in clock speed (Blue pill's STMF103C8T6 clock is 72MHz vs 24MHz on STM32VL) and peripherals (e.g. blue pill's STMF103C8T6 doesn't have a DAC onboard). *When building using the Blue Pill, change*:
 
 PTYPE = STM32F10X_MD_VL
 
 to
 
 PTYPE = STM32F10X_MD
+
+or vise-versa
 
 in makefile.common in the author-provided code. Or just clone my repo.
 
@@ -29,5 +31,5 @@ To program a Disco board w/ the STLink Dongle:
 -dongle GND -> disco GND
 -dongle 3V3 -> disco 3V3/VDD
 
-
+N.B. that because 2 different boards were used that particulars when building may arise depending on the target board.
 
