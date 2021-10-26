@@ -64,8 +64,7 @@ unsigned char mygetchar ()
 
 bool ledval = false;
 uint16_t wavetable[NUM_SAMPLES];
-int wavept_cnt = 0;
-
+uint8_t wavept_cnt =  0;
 
 int main()
 {
@@ -80,7 +79,7 @@ int main()
     xdev_out(myputchar);
 
     //uart port opened for debugging
-    uart_open(USART1,9600);
+    uart_open(USART1,115200);
     xprintf("UART is Live.\r\n");
 
     // start LED
@@ -90,8 +89,8 @@ int main()
     // Timer Init
     // This is 'close enough' - did both math (see worksheet)
     // and verified with mikro calculator program for timers
-    timer_init(TIM3, RCC_APB1Periph_TIM3, 18000000, 
-        136, TIM_CounterMode_Up);
+    timer_init(TIM3, RCC_APB1Periph_TIM3, 4000000, 
+        91, TIM_CounterMode_Up);
 
     // Config output to trigger on an update
     TIM_SelectOutputTrigger(TIM3 , TIM_TRGOSource_Update);
@@ -99,10 +98,10 @@ int main()
     TIM_Cmd(TIM3 , ENABLE); // why not
 
     // Enable Interrupt
-    config_NVIC(TIM3_IRQn,3);
+    config_NVIC(TIM3_IRQn,0);
 
     // INIT DAC
-    DAC_init_w_Trig(DAC_Channel_1,DAC_Trigger_T3_TRGO);
+    DAC_init_w_Trig(DAC_Channel_1, DAC_Trigger_T3_TRGO);
 
     // Generate waveform samples
     gen_sine_wave(&wavetable, NUM_SAMPLES, MIN_AMP, MAX_AMP);
@@ -117,16 +116,17 @@ int main()
 
 void TIM3_IRQHandler(void)
 {
+    //DEBUG - MUST slow timer down to use (e.g. 136 -> 13600+ for period)
+    //xprintf("TIM3 Interrupt!\r\n");
+    //xprintf("wavept cnt is %d\r\n",wavept_cnt);
     if(wavept_cnt>=NUM_SAMPLES)
     {
         wavept_cnt=0; // reset and clear
     }
 
-    // Give DAC a datapoint every 1ms
-    DAC_SetChannel1Data(DAC_Align_12b_L,wavetable[wavept_cnt]);
-    wavept_cnt++;
-    Delay(1);
-        
+    DAC_SetChannel1Data(DAC_Align_12b_R,wavetable[wavept_cnt]);
+    //xprintf("Wavept value is %d\r\n",wavetable[wavept_cnt]);
+    wavept_cnt++;        
     TIM_ClearITPendingBit(TIM3 ,TIM_IT_Update);
 
 }

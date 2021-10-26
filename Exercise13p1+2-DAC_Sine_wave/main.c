@@ -103,8 +103,9 @@ int main()
         for (uint16_t i = 0; i < NUM_SAMPLES; i++)
         {
             // Give DAC a datapoint every 1ms
-            DAC_SetChannel1Data(DAC_Align_12b_L,wavetable[i]);
-            xprintf("Value is %d\r\n",wavetable[i]);
+            DAC_SetChannel1Data(DAC_Align_12b_R,wavetable[i]);
+            xprintf("Passed Value is %d\r\n",wavetable[i]);
+            xprintf("Last output value is %d\r\n", DAC_GetDataOutputValue(DAC_Channel_1));
             Delay(1);
         }
     }
