@@ -17,6 +17,7 @@
 #include "setup_main.h"
 #include "xprintf.h"
 #include "dac.h"
+#include "audioplayer.h"
 
 /*
 Remarks:
@@ -59,13 +60,14 @@ unsigned char mygetchar ()
 }
 
 // Sine wave def's
-#define WAVETABLE_NUM_SAMPLES     100
 #define MIN_AMP         512
 #define MAX_AMP         1536
 
 bool ledval = false;
-uint16_t wavetable[WAVETABLE_NUM_SAMPLES];
-uint16_t outbuf[WAVETABLE_NUM_SAMPLES];
+bool audioplayerHalf = false;
+bool audioplayerWhole = false;
+uint8_t wavetable[AUDIOBUFSIZE];
+uint8_t Audiobuf[AUDIOBUFSIZE];
 int wavept_cnt = 0;
 
 
@@ -105,15 +107,32 @@ int main()
 
     // INIT DAC
     DAC_init_w_Trig(DAC_Channel_1,DAC_Trigger_T3_TRGO);
-    init_dac_dma(outbuf,WAVETABLE_NUM_SAMPLES);
-    // Generate waveform samples for wavetable and initial outbuf 
-    gen_sine_wave(&wavetable, WAVETABLE_NUM_SAMPLES, MIN_AMP, MAX_AMP);
-    gen_sine_wave(&outbuf,WAVETABLE_NUM_SAMPLES,MIN_AMP, MAX_AMP);
+    init_dac_dma(Audiobuf,AUDIOBUFSIZE);
+    // Generate waveform samples for wavetable and initial Audiobuf 
+    gen_sine_wave(&wavetable, AUDIOBUFSIZE, MIN_AMP, MAX_AMP);
+    gen_sine_wave(&Audiobuf,AUDIOBUFSIZE,MIN_AMP, MAX_AMP);
     
-    //MAIN LOOP
+    // MAIN LOOP
     while (1) 
     {
-       //nothing!
+        // Poll the half and whole transfer flags
+        if (audioplayerWhole == true)
+        {
+            for (int i = AUDIOBUFSIZE /2; i < AUDIOBUFSIZE; i++)
+            {
+               Audiobuf[i] = wavetable[i];
+               audioplayerWhole = false;
+            }
+        }
+
+        else if (audioplayerHalf == true)
+        {
+            for (int i = 0; i < AUDIOBUFSIZE/2; i++)
+            {
+                Audiobuf[i] = wavetable[i];
+                audioplayerHalf = false;
+            }   
+        }
     }
    return(0);
 }
@@ -122,17 +141,12 @@ void DMA1_Channel3_IRQHandler(void)
 {
     if (DMA_GetITStatus(DMA1_IT_TC3))
     {   
-        // Transfer complete
-        for (int i = WAVETABLE_NUM_SAMPLES /2; i < WAVETABLE_NUM_SAMPLES; i++)
-        outbuf[i] = wavetable[i];
-        //completed ++; // why do I care about counting completions? 
+        audioplayerWhole = true;
         DMA_ClearITPendingBit(DMA1_IT_TC3);
     }
     else if (DMA_GetITStatus(DMA1_IT_HT3))
     {   
-        // Half Transfer complete
-        for (int i = 0; i < WAVETABLE_NUM_SAMPLES/2; i++)
-        outbuf[i] = wavetable[i];
+        audioplayerHalf = true;
         DMA_ClearITPendingBit(DMA1_IT_HT3);
     }
 }
