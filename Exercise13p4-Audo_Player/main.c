@@ -91,6 +91,10 @@ int main()
     init_onboard_led();
     GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
 
+    // Generate waveform samples for wavetable and initial Audiobuf 
+    gen_sine_wave(&wavetable, AUDIOBUFSIZE, MIN_AMP, MAX_AMP);
+    gen_sine_wave(&Audiobuf,AUDIOBUFSIZE,MIN_AMP, MAX_AMP);
+
     // Timer Init
     // This is 'close enough' - did both math (see worksheet)
     // and verified with mikro calculator program for timers
@@ -108,9 +112,6 @@ int main()
     // INIT DAC
     DAC_init_w_Trig(DAC_Channel_1,DAC_Trigger_T3_TRGO);
     init_dac_dma(Audiobuf,AUDIOBUFSIZE);
-    // Generate waveform samples for wavetable and initial Audiobuf 
-    gen_sine_wave(&wavetable, AUDIOBUFSIZE, MIN_AMP, MAX_AMP);
-    gen_sine_wave(&Audiobuf,AUDIOBUFSIZE,MIN_AMP, MAX_AMP);
     
     // MAIN LOOP
     while (1) 

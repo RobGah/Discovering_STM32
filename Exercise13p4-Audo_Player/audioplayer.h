@@ -1,7 +1,7 @@
 #ifndef AUDIOPLAYER_H
 #define AUDIOPLAYER_H
 
-#define AUDIOBUFSIZE 128
+#define AUDIOBUFSIZE 100
 
 extern uint8_t Audiobuf [];
 extern bool audioplayerHalf;

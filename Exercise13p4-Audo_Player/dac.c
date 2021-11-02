@@ -129,5 +129,5 @@ DMA_ITConfig(DMA1_Channel3 , DMA_IT_TC | DMA_IT_HT , ENABLE);
 
 // Enablee DAC 
 DMA_Cmd(DMA1_Channel3 , ENABLE);
-//DAC_DMACmd(DAC_Channel_1 , ENABLE); //might be better placed in audio_start()
+DAC_DMACmd(DAC_Channel_1 , ENABLE); //might be better placed in audio_start()
 }
