@@ -98,8 +98,9 @@ int main()
     // Timer Init
     // This is 'close enough' - did both math (see worksheet)
     // and verified with mikro calculator program for timers
-    timer_init(TIM3, RCC_APB1Periph_TIM3, 18000000, 
-        136, TIM_CounterMode_Up);
+    // DANGER - prescalar/divided clock must be an integer value
+    timer_init(TIM3, RCC_APB1Periph_TIM3, 4000000, 
+        91, TIM_CounterMode_Up); 
 
     // Config output to trigger on an update
     TIM_SelectOutputTrigger(TIM3 , TIM_TRGOSource_Update);
