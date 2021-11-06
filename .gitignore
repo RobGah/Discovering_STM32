@@ -1,6 +1,7 @@
 *~
 *.d
 *.o
+*.wav
 Exercise8-ffsample/00readme.txt
 Exercise8-ffsample/monitor.log
 Exercise8-ffsample/avr/avr_cfmm2.png
