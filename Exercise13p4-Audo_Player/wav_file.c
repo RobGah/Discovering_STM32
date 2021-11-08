@@ -12,6 +12,8 @@
 #define WAVE 'EVAW'
 #define fmt ' tmf'
 #define data 'atad'
+#define list 'TSIL'
+#define info 'OFNI'
 
 // see http://soundfile.sapp.org/doc/WaveFormat/
 // easy single file gcc compile : "gcc -g -Wall -owav_file wav_file.c"
@@ -38,6 +40,18 @@ struct fmt_chunk
     // ExtraParams - DNE if PCM.
 };
 
+/* 
+LIST is an optional chunk in some files
+It can be of variable length and if its type INFO (it often is)
+it will have artist/album, engineer on record, etc.
+ */
+struct list_chunk  
+{
+    uint32_t FormatTag;
+    uint32_t chunkID;
+    uint32_t SubchunkSize;
+};
+
 struct wav_data
 {
     uint32_t FormatTag; // 'data'
@@ -47,12 +61,13 @@ struct wav_data
 
 #ifdef ISMAIN
 
-
-int wavfile;
+uint32_t wavfile;
+char audio_data;
 
 struct RIFF_header riffheader;
 struct fmt_chunk fmtchunk;
 struct wav_data datachunk;
+struct list_chunk listchunk;
 
 int main(int argc, char * argv[])
 {    
@@ -77,11 +92,14 @@ int main(int argc, char * argv[])
         read(wavfile,(void *)&riffheader.ChunkID, 4);
         if(riffheader.ChunkID == RIFF)
         {
-            printf("File is type \"%X\".\r\n",riffheader.ChunkID);
+            printf("RIFF header ChunkID is type RIFF\r\n");
             read(wavfile,(void *)&riffheader.ChunkSize, 4);
             printf("File size is %X.\r\n",riffheader.ChunkSize);
             read(wavfile,(void *)&riffheader.Format, 4);
-            printf("Format is \"%X\".\r\n",riffheader.Format);
+            if(riffheader.Format == WAVE)
+            {
+                printf("Format is WAVE.\r\n");
+            }
         }
 
         else
@@ -92,7 +110,7 @@ int main(int argc, char * argv[])
         read(wavfile,(void *)&fmtchunk.FormatTag,4);
         if(fmtchunk.FormatTag == fmt)
         {
-            printf("Format is \"%X\".\r\n",fmtchunk.FormatTag);
+            printf("Subchunk1 ID is fmt. \r\n");
             read(wavfile,(void *)&fmtchunk.SubchunkSize,4);
             printf("Format Chunk Size is %X.\r\n",fmtchunk.SubchunkSize);
             read(wavfile,(void *)&fmtchunk.AudioFormat,2);
@@ -108,9 +126,72 @@ int main(int argc, char * argv[])
             read(wavfile,(void *)&fmtchunk.wBitsPerSample,2);
             printf("Bits/sample: %X.\r\n",fmtchunk.wBitsPerSample);
         }
+
+        /* 
+        Attempted to parse the LIST portion of the file (if it exists)
+        Might revisit, but its unnessessary. 
+        */
+
+        // read(wavfile,(void *)&listchunk.FormatTag,4);
+        // if(listchunk.FormatTag == list)
+        // {
+        //     printf("LIST FormatTag is \"%X\".\r\n",listchunk.FormatTag);
+        //     read(wavfile,(void *)&listchunk.SubchunkSize,4);
+        //     printf("LIST chunk size is: %X\r\n",listchunk.SubchunkSize);
+        //     read(wavfile,(void *)&listchunk.chunkID,4);
+        //     if (listchunk.chunkID == info)
+        //     {
+        //         printf("LIST chunk is type INFO.\r\n");
+        //         read(wavfile,(void *)&listchunk.chunkID,4);
+        //         while(listchunk.chunkID != data)
+        //         {
+        //             printf("INFO SubChunk ID is \"%X\".\r\n",listchunk.chunkID);
+        //             read(wavfile,(void *)&listchunk.SubchunkSize,4);
+        //             printf("Size of Info Subchunk is %X\r\n",listchunk.SubchunkSize);
+        //             printf("\"%X\"'s data is:\r\n",listchunk.chunkID);
+        //             for(uint32_t i = 0; i<listchunk.SubchunkSize;i++)
+        //             {
+        //                 read(wavfile,(void *) audio_data,1);
+        //                 printf("%X",audio_data);
+        //             }
+        //             printf("\r\n");
+        //             read(wavfile,(void *)&listchunk.chunkID,4);
+        //         }
+        //         // we hit the condition where chunkID is 'data'
+        //         // assign this to the datachunk's format tag
+        //         datachunk.FormatTag = listchunk.chunkID;
+        //     }
+        // }
+        //// if list chunk DNE, search for data chunk and proceed
+        //else
+        //
+
+        do
+        {
+            read(wavfile,(void *)&datachunk.FormatTag,4);
+        } while (datachunk.FormatTag != data);
+
+        if(datachunk.FormatTag == data)
+        {
+            printf("SubChunk2 ID is DATA\r\n");
+            read(wavfile,(void *)&datachunk.SubchunkSize,4);
+            printf("SubChunk2 Size is: %X.\r\n",datachunk.SubchunkSize);
+            //get a full readout - not recommended.
+            //printf("Raw data bytes:\r\n");
+            // for(uint32_t i = 0; i<datachunk.SubchunkSize;i++)
+            // {
+            //     read(wavfile,(void *) &audio_data,1);
+            //     printf("%X ",audio_data);
+                
+            //     if(i%10 == 0)
+            //     {
+            //         printf("\r\n");
+            //     }
+            // }
+        }
         close(wavfile);
-    return 1;
     }
+    return 1;
 }
 
 #endif
