@@ -18,6 +18,7 @@
 #include "xprintf.h"
 #include "dac.h"
 #include "audioplayer.h"
+#include "ff.h"
 
 /*
 Remarks:
@@ -66,11 +67,80 @@ unsigned char mygetchar ()
 bool ledval = false;
 bool audioplayerHalf = false;
 bool audioplayerWhole = false;
-uint8_t wavetable[AUDIOBUFSIZE];
-uint8_t Audiobuf[AUDIOBUFSIZE];
-int wavept_cnt = 0;
+uint32_t datasize = 0; // size of data block
+uint32_t offset = 0; // offset amount in bytes from start of file
+uint8_t wavetable[AUDIOBUFSIZE]; // buffer we load data into
+uint8_t Audiobuf[AUDIOBUFSIZE]; // buffer we're playing from
+FIL file;
+
+// Bad form but I just kind of threw this everywhere
+// Well aware it gets #include'd - can remove after developing code.
+#define AUDIOPLAYER
+
+#ifdef AUDIOPLAYER
+
+int main()
+{
+    // Configure SysTick Timer
+    if(SysTick_Config(SystemCoreClock/1000))
+    {
+        while(1);
+    }
+
+    //setup xprintf - I like these func's better than what the book suggests
+    xdev_in(mygetchar); 
+    xdev_out(myputchar);
+
+    //uart port opened for debugging
+    uart_open(USART1,9600);
+    xprintf("UART is Live.\r\n");
+
+    // start LED
+    init_onboard_led();
+    GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
+
+    // init audioplayer
+    audioplayerInit();
+
+    audioplayerLoadFile(&file, &wavetable, datasize, offset);
+    // initial full load of audio buffer data
+    for(int i = 0; i<AUDIOBUFSIZE; i++)
+    {
+        Audiobuf[i] = wavetable[i];
+    }
+
+    // MAIN LOOP
+    while (1) 
+    {
+        // Poll the half and whole transfer flags
+        if (audioplayerWhole == true)
+        {
+            //stock the back-half of the wavetable buffer
+            audioplayerNextBlock(&file,&wavetable[AUDIOBUFSIZE/2],offset,AUDIOBUFSIZE/2);
+            for (int i = AUDIOBUFSIZE /2; i < AUDIOBUFSIZE; i++)
+            {
+               Audiobuf[i] = wavetable[i];
+               audioplayerWhole = false;
+            }
+        }
+
+        else if (audioplayerHalf == true)
+        {
+            //stock the front-half of the wavetable buffer
+            audioplayerNextBlock(&file,&wavetable,offset,AUDIOBUFSIZE/2);
+            for (int i = 0; i < AUDIOBUFSIZE/2; i++)
+            {
+                Audiobuf[i] = wavetable[i];
+                audioplayerHalf = false;
+            }   
+        }
+    }
+   return(0);
+} 
+#endif
 
 
+#ifdef SINGLETONETEST
 int main()
 {
     // Configure SysTick Timer
@@ -138,6 +208,7 @@ int main()
     }
    return(0);
 }
+#endif
 
 void DMA1_Channel3_IRQHandler(void)
 {

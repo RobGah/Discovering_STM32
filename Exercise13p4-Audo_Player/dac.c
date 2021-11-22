@@ -6,6 +6,10 @@
 #include <stm32f10x_dma.h>
 #include "dac.h"
 
+// I don't want to edit my functions. Lazy. 
+// This is fine for a personal project 
+// and the requirement is that I *need* an interface w/ audioplayerstart()
+#define AUDIOPLAYER 
 
 int DAC_init(uint32_t channel)
 {
@@ -44,8 +48,10 @@ int DAC_init(uint32_t channel)
     DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
     DAC_Init(channel , &DAC_InitStructure);
     
+    #ifndef AUDIOPLAYER
     // Enable DAC
     DAC_Cmd(channel , ENABLE);
+    #endif
 
     return 0;
 }
@@ -90,9 +96,11 @@ int DAC_init_w_Trig(uint32_t channel, uint32_t trigger_src)
     DAC_InitStructure.DAC_Trigger = trigger_src;
     DAC_Init(channel , &DAC_InitStructure);
     
+    #ifndef AUDIOPLAYER
     // Enable DAC
     DAC_Cmd(channel , ENABLE);
-
+    #endif
+    
     return 0;
 }
 
@@ -127,7 +135,9 @@ DMA_Init(DMA1_Channel3 , &DMA_InitStructure);
 // Enable Interrupts for complete and half transfers
 DMA_ITConfig(DMA1_Channel3 , DMA_IT_TC | DMA_IT_HT , ENABLE);
 
+#ifndef AUDIOPLAYER
 // Enablee DAC 
 DMA_Cmd(DMA1_Channel3 , ENABLE);
 DAC_DMACmd(DAC_Channel_1 , ENABLE); //might be better placed in audio_start()
+#endif
 }

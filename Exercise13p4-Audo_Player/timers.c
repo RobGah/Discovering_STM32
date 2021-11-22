@@ -12,6 +12,11 @@
 #include "timers.h"
 #include "xprintf.h"
 
+// I don't want to edit my functions. Lazy. 
+// This is fine for a personal project 
+// and the requirement is that I *need* an interface w/ audioplayerstart()
+#define AUDIOPLAYER 
+
 void timer_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,
      uint32_t period, uint16_t countermode)
 {
@@ -35,8 +40,11 @@ void timer_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div
     TIM_TimeBaseStructure.TIM_CounterMode = countermode;
     TIM_TimeBaseInit(TIMx , &TIM_TimeBaseStructure);
     
+
+    #ifndef AUDIOPLAYER
     // Enable Timer
-    TIM_Cmd(TIMx , ENABLE); 
+    TIM_Cmd(TIMx , ENABLE);
+    #endif 
 }
 
 void pwm_init(TIM_TypeDef * TIMx, uint32_t timerperiph, uint32_t prescaler_div,

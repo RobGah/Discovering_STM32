@@ -1,11 +1,18 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
-#define ISMAIN
+//#define ISMAIN
 
 #ifdef ISMAIN
 #include <stdio.h> 
 #include <fcntl.h>
+#endif
+
+#ifndef ISMAIN
+#include "wav_file.h"
+#include "ff.h"
+#include "xprintf.h"
 #endif
 
 #define RIFF 'FFIR'
@@ -59,6 +66,183 @@ struct wav_data
     // SubchunkSize bytes of data follows...
 };
 
+#ifndef ISMAIN
+// declare instances of these structs
+static struct RIFF_header riffheader;
+static struct fmt_chunk fmtchunk;
+static struct wav_data datachunk;
+static struct list_chunk listchunk;
+
+// FATFS variables
+FATFS FatFs;		/* FatFs work area needed for each volume */
+FIL wavfile;		/* File object needed for each open file */
+UINT bmp_count;     /* ad oculos*/
+FRESULT fr;         /* FatFs function common result code*/
+DIR dir;
+static FILINFO fno;
+static bool file_is_open = false;
+
+enum PARSE_ERRORS {
+    BAD_WAV_FILE,       // Error opening file
+    NOT_RIFF,           // File does not have a RIFF tag
+    NOT_WAV_FMT,        // File format is not WAV 
+    NOT_FMT_HEADER,     // FMT header not found in WAV file
+    NO_WAV_DATA         // File contains no WAV data (likely won't see this ever)
+    };
+
+
+uint32_t parse_wavfile(char * filename)
+{
+    /*
+    Takes a filename within the current directory (specified outside this function)
+    and parses the major headers. Fills the declared structs w/ information about 
+    the WAV file so that it can be used later. 
+
+    inputs: filename e.g. "sound.wav"
+    outputs: a uint32_t value for the offset between the start of the file
+    and the large chunk of sound bytes for access w/ f_lseek() in a read function.
+    */
+
+    UINT br;
+    uint32_t retval = 0;
+
+    if(file_is_open != true)
+        {
+            fr = f_open(&wavfile, &filename, FA_READ);
+            xprintf("f_open completed and returned %d\r\n",fr);
+            if(fr != FR_OK)
+            {
+                xprintf("File not found!\r\n");
+                return BAD_WAV_FILE;
+            }
+            else file_is_open = true;
+        }
+        
+    fr = f_read(&wavfile,(void *)&riffheader.ChunkID, 4, &br);
+       
+        if(riffheader.ChunkID == RIFF)
+        {
+            xprintf("RIFF header ChunkID is type RIFF\r\n");
+            fr = f_read(&wavfile,(void *)&riffheader.ChunkSize, 4, &br);
+            retval = riffheader.ChunkSize + 8; //+ ChunkID + Chunksize bytes
+            xprintf("File size is %X.\r\n",riffheader.ChunkSize);
+            fr = f_read(&wavfile,(void *)&riffheader.Format, 4, &br);
+            if(riffheader.Format == WAVE)
+            {
+                xprintf("Format is WAVE.\r\n");
+            }
+            else
+            {
+                xprintf("NOT a WAVE File");
+                return NOT_WAV_FMT;
+            }
+        }
+        else
+        {
+            xprintf("Not a RIFF header!\r\n");
+            return NOT_RIFF;
+        }
+
+        fr= f_read(&wavfile,(void *)&fmtchunk.FormatTag,4,&br);
+        if(fmtchunk.FormatTag == fmt)
+        {
+            xprintf("Subchunk1 ID is fmt. \r\n");
+            fr = f_read(&wavfile,(void *)&fmtchunk.SubchunkSize,4,&br);
+            xprintf("Format Chunk Size is %X.\r\n",fmtchunk.SubchunkSize);
+            fr = f_read(&wavfile,(void *)&fmtchunk.AudioFormat,2,&br);
+            xprintf("Audio Format is %X.\r\n",fmtchunk.AudioFormat);
+            fr = f_read(&wavfile,(void *)&fmtchunk.nChannels,2,&br);
+            xprintf("Number of channels: %X.\r\n",fmtchunk.nChannels);
+            fr = f_read(&wavfile,(void *)&fmtchunk.nSamplesPerSec,4,&br);
+            xprintf("Samples/sec: %X.\r\n",fmtchunk.nSamplesPerSec);
+            fr = f_read(&wavfile,(void *)&fmtchunk.nAvgBytesPerSec,4,&br);
+            xprintf("Average Bytes/sec: %X.\r\n",fmtchunk.nAvgBytesPerSec);
+            fr = f_read(&wavfile,(void *)&fmtchunk.nBlockAlign,2,&br);
+            xprintf("Bytes/sample: %X.\r\n",fmtchunk.nBlockAlign);
+            fr = f_read(&wavfile,(void *)&fmtchunk.wBitsPerSample,2,&br);
+            xprintf("Bits/sample: %X.\r\n",fmtchunk.wBitsPerSample);
+        }
+        else
+        {
+            xprintf("There is no fmt chunk - ERROR\r\n");
+            return NOT_FMT_HEADER;
+        }
+            do
+        {
+            read(wavfile,(void *)&datachunk.FormatTag,4);
+        } while (datachunk.FormatTag != data);
+
+        if(datachunk.FormatTag == data)
+        {
+            xprintf("SubChunk2 ID is DATA\r\n");
+            read(wavfile,(void *)&datachunk.SubchunkSize,4);
+            xprintf("SubChunk2 Size is: %X.\r\n",datachunk.SubchunkSize);
+            retval -= datachunk.SubchunkSize;
+            //get a full readout - not recommended.
+            //printf("Raw data bytes:\r\n");
+            // for(uint32_t i = 0; i<datachunk.SubchunkSize;i++)
+            // {
+            //     read(wavfile,(void *) &audio_data,1);
+            //     printf("%X ",audio_data);
+                
+            //     if(i%10 == 0)
+            //     {
+            //         printf("\r\n");
+            //     }
+            // }
+        }
+        else
+        {
+            // I don't think we could ever get here.
+            xprintf("WAV Data not found! - ERROR \r\n");
+            return NO_WAV_DATA;
+        }
+        xprintf("Byte offset from file start to data: %X.\r\n",retval);
+        
+        close(wavfile);
+        return(retval);
+}
+
+uint32_t get_wavfile_size(char *filename)
+{
+    parse_wavfile(&filename);
+    return riffheader.ChunkSize;
+}
+
+FRESULT read_wavfile_data(char * filename, uint8_t *readbuffer, uint32_t offset, uint8_t numbytes)
+{
+    /*
+    -Reads numbytes of data from the specified wavfile into a buffer at the location
+        specified by an offset from the start of the wav file. 
+    -Can open the file if not open already, but does not close it.
+    -Offset is incremented to save the location of the read in case of file closure
+        and also to track the progress of the read to determine EOF.
+
+    */
+    UINT br; // read count
+    if(file_is_open != true)
+    {
+        fr = f_open(&wavfile, &filename, FA_READ);
+        xprintf("f_open completed and returned %d\r\n",fr);
+        if(fr != FR_OK)
+        {
+            xprintf("File open failed!\r\n");
+            return fr;
+        }
+        else file_is_open = true;
+    }
+
+        // go to wav data
+        fr = f_lseek(&wavfile,offset);
+        fr = f_read(&wavfile,&readbuffer,numbytes,br);
+        offset+=numbytes; // increment offset?
+        return fr;
+}
+#endif 
+
+/***********************************/
+/****BEGIN MAIN FILE PARSER .EXE****/
+/***********************************/
 #ifdef ISMAIN
 
 uint32_t wavfile;
