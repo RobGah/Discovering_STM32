@@ -1,14 +1,16 @@
-#include "audioplayer.h"
-#include "ff.h"
-#include "wav_file.h"
-#include "timers.h"
-#include "interrupts.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stm32f10x_tim.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_dac.h>
+#include "timers.h"
+#include "ff.h"
+#include "interrupts.h"
+#include "wav_file.h"
+#include "audioplayer.h"
+
 
 void audioplayerInit() // author passes uint samplerate, but its not needed?
 {

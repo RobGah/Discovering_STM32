@@ -3,6 +3,8 @@
 
 #define AUDIOBUFSIZE 128
 
+#include <stdbool.h>
+
 extern uint8_t Audiobuf [];
 extern bool audioplayerHalf;
 extern bool audioplayerWhole;

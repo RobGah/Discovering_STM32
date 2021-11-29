@@ -10,9 +10,9 @@
 #endif
 
 #ifndef ISMAIN
-#include "wav_file.h"
 #include "ff.h"
 #include "xprintf.h"
+#include "wav_file.h"
 #endif
 
 #define RIFF 'FFIR'
@@ -117,7 +117,7 @@ uint32_t parse_wavfile(char * filename)
             }
             else file_is_open = true;
         }
-        
+
     fr = f_read(&wavfile,(void *)&riffheader.ChunkID, 4, &br);
        
         if(riffheader.ChunkID == RIFF)

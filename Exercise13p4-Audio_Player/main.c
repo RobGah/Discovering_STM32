@@ -17,8 +17,8 @@
 #include "setup_main.h"
 #include "xprintf.h"
 #include "dac.h"
-#include "audioplayer.h"
 #include "ff.h"
+#include "audioplayer.h"
 
 /*
 Remarks:
@@ -69,8 +69,11 @@ bool audioplayerHalf = false;
 bool audioplayerWhole = false;
 uint32_t datasize = 0; // size of data block
 uint32_t offset = 0; // offset amount in bytes from start of file
+uint32_t readBytesCount = 0; // count of bytes read from file
+uint32_t remainingBytesCount; // count of bytes remaining to be read from file
 uint8_t wavetable[AUDIOBUFSIZE]; // buffer we load data into
 uint8_t Audiobuf[AUDIOBUFSIZE]; // buffer we're playing from
+bool audioStopFlag = false;
 FIL file;
 
 // Bad form but I just kind of threw this everywhere
@@ -102,37 +105,75 @@ int main()
     // init audioplayer
     audioplayerInit();
 
+    // load file - get datasize and assign value to remainingBytesCount
     audioplayerLoadFile(&file, &wavetable, datasize, offset);
+    remainingBytesCount = datasize;
+
     // initial full load of audio buffer data
     for(int i = 0; i<AUDIOBUFSIZE; i++)
     {
         Audiobuf[i] = wavetable[i];
     }
 
+    // increment readBytesCount, decrement remainingBytesCount
+    readBytesCount += AUDIOBUFSIZE;
+    remainingBytesCount -= AUDIOBUFSIZE;
+
     // MAIN LOOP
     while (1) 
     {
+        if (audioStopFlag == true)
+        {
+           audioplayerStop(&file);
+           return 1; // program stops for good.  
+        }
         // Poll the half and whole transfer flags
         if (audioplayerWhole == true)
         {
-            //stock the back-half of the wavetable buffer
-            audioplayerNextBlock(&file,&wavetable[AUDIOBUFSIZE/2],offset,AUDIOBUFSIZE/2);
-            for (int i = AUDIOBUFSIZE /2; i < AUDIOBUFSIZE; i++)
+            if((remainingBytesCount) < AUDIOBUFSIZE/2)
             {
-               Audiobuf[i] = wavetable[i];
-               audioplayerWhole = false;
+                memset(&Audiobuf[AUDIOBUFSIZE/2],0,AUDIOBUFSIZE/2);
+                audioplayerNextBlock(&file,&wavetable,offset,remainingBytesCount);
+                audioStopFlag = true;
+                readBytesCount += remainingBytesCount;
+                remainingBytesCount -= remainingBytesCount;
+            }
+            else
+            {
+                // stock the back-half of the wavetable buffer
+                audioplayerNextBlock(&file,&wavetable[AUDIOBUFSIZE/2],offset,AUDIOBUFSIZE/2);
+                for (int i = AUDIOBUFSIZE /2; i < AUDIOBUFSIZE; i++)
+                {
+                    Audiobuf[i] = wavetable[i];
+                    audioplayerWhole = false;
+                }
+                readBytesCount += AUDIOBUFSIZE/2;
+                remainingBytesCount -= AUDIOBUFSIZE/2;
             }
         }
 
         else if (audioplayerHalf == true)
         {
-            //stock the front-half of the wavetable buffer
-            audioplayerNextBlock(&file,&wavetable,offset,AUDIOBUFSIZE/2);
-            for (int i = 0; i < AUDIOBUFSIZE/2; i++)
+            if((remainingBytesCount) < AUDIOBUFSIZE/2)
             {
-                Audiobuf[i] = wavetable[i];
-                audioplayerHalf = false;
-            }   
+                memset(&Audiobuf,0,AUDIOBUFSIZE/2);
+                audioplayerNextBlock(&file,&wavetable,offset,remainingBytesCount);
+                audioStopFlag = true;
+                readBytesCount += remainingBytesCount;
+                remainingBytesCount -= remainingBytesCount;
+            }
+            else
+            {
+                // stock the front-half of the wavetable buffer
+                audioplayerNextBlock(&file,&wavetable,offset,AUDIOBUFSIZE/2);
+                for (int i = 0; i < AUDIOBUFSIZE/2; i++)
+                {
+                    Audiobuf[i] = wavetable[i];
+                    audioplayerHalf = false;
+                }   
+                readBytesCount += AUDIOBUFSIZE/2;
+                remainingBytesCount -= AUDIOBUFSIZE/2;
+            }
         }
     }
    return(0);
@@ -220,7 +261,7 @@ void DMA1_Channel3_IRQHandler(void)
     else if (DMA_GetITStatus(DMA1_IT_HT3))
     {   
         audioplayerHalf = true;
-        DMA_ClearITPendingBit(DMA1_IT_HT3);
+        DMA_ClearITPendingBit(DMA1_IT_HT3);    
     }
 }
 
