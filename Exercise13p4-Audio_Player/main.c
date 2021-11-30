@@ -18,6 +18,7 @@
 #include "xprintf.h"
 #include "dac.h"
 #include "ff.h"
+#include "diskio.h"
 #include "audioplayer.h"
 
 /*
@@ -64,18 +65,25 @@ unsigned char mygetchar ()
 #define MIN_AMP         512
 #define MAX_AMP         1536
 
+//debug LED
 bool ledval = false;
+
+// Audioplayer flags
 bool audioplayerHalf = false;
 bool audioplayerWhole = false;
+bool audioStopFlag = false;
+
+// Audioplayer variables
 uint32_t datasize = 0; // size of data block
 uint32_t offset = 0; // offset amount in bytes from start of file
 uint32_t readBytesCount = 0; // count of bytes read from file
 uint32_t remainingBytesCount; // count of bytes remaining to be read from file
 uint8_t wavetable[AUDIOBUFSIZE]; // buffer we load data into
 uint8_t Audiobuf[AUDIOBUFSIZE]; // buffer we're playing from
-bool audioStopFlag = false;
-FIL file;
 
+//FatFS variables
+FATFS FatFs;
+char filename[] = "Doin_it_right.wav";
 // Bad form but I just kind of threw this everywhere
 // Well aware it gets #include'd - can remove after developing code.
 #define AUDIOPLAYER
@@ -102,11 +110,14 @@ int main()
     init_onboard_led();
     GPIO_WriteBit(GPIOC, GPIO_Pin_13, Bit_RESET);
 
+    //mount drive
+    f_mount(&FatFs,"",1);
+
     // init audioplayer
     audioplayerInit();
 
     // load file - get datasize and assign value to remainingBytesCount
-    audioplayerLoadFile(&file, &wavetable, datasize, offset);
+    audioplayerLoadFile(&filename, &wavetable, datasize, offset);
     remainingBytesCount = datasize;
 
     // initial full load of audio buffer data
@@ -124,7 +135,7 @@ int main()
     {
         if (audioStopFlag == true)
         {
-           audioplayerStop(&file);
+           audioplayerStop();
            return 1; // program stops for good.  
         }
         // Poll the half and whole transfer flags
@@ -133,7 +144,7 @@ int main()
             if((remainingBytesCount) < AUDIOBUFSIZE/2)
             {
                 memset(&Audiobuf[AUDIOBUFSIZE/2],0,AUDIOBUFSIZE/2);
-                audioplayerNextBlock(&file,&wavetable,offset,remainingBytesCount);
+                audioplayerNextBlock(&filename,&wavetable,offset,remainingBytesCount);
                 audioStopFlag = true;
                 readBytesCount += remainingBytesCount;
                 remainingBytesCount -= remainingBytesCount;
@@ -141,7 +152,7 @@ int main()
             else
             {
                 // stock the back-half of the wavetable buffer
-                audioplayerNextBlock(&file,&wavetable[AUDIOBUFSIZE/2],offset,AUDIOBUFSIZE/2);
+                audioplayerNextBlock(&filename,&wavetable[AUDIOBUFSIZE/2],offset,AUDIOBUFSIZE/2);
                 for (int i = AUDIOBUFSIZE /2; i < AUDIOBUFSIZE; i++)
                 {
                     Audiobuf[i] = wavetable[i];
@@ -157,7 +168,7 @@ int main()
             if((remainingBytesCount) < AUDIOBUFSIZE/2)
             {
                 memset(&Audiobuf,0,AUDIOBUFSIZE/2);
-                audioplayerNextBlock(&file,&wavetable,offset,remainingBytesCount);
+                audioplayerNextBlock(&filename,&wavetable,offset,remainingBytesCount);
                 audioStopFlag = true;
                 readBytesCount += remainingBytesCount;
                 remainingBytesCount -= remainingBytesCount;
@@ -165,7 +176,7 @@ int main()
             else
             {
                 // stock the front-half of the wavetable buffer
-                audioplayerNextBlock(&file,&wavetable,offset,AUDIOBUFSIZE/2);
+                audioplayerNextBlock(&filename,&wavetable,offset,AUDIOBUFSIZE/2);
                 for (int i = 0; i < AUDIOBUFSIZE/2; i++)
                 {
                     Audiobuf[i] = wavetable[i];

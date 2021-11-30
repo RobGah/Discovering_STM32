@@ -10,8 +10,8 @@ extern bool audioplayerHalf;
 extern bool audioplayerWhole;
 
 void audioplayerInit();
-void audioplayerStart(char * file);
-void audioplayerStop(char * file);
+void audioplayerStart();
+void audioplayerStop();
 FRESULT audioplayerLoadFile(char *file, char* readbuffer,uint32_t datasize, uint32_t offset);
 FRESULT audioplayerNextBlock(char *file, char *readbuffer, uint32_t offset, uint16_t numbytes);
 

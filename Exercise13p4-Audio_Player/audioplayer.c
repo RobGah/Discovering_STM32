@@ -33,7 +33,7 @@ void audioplayerInit() // author passes uint samplerate, but its not needed?
     init_dac_dma(Audiobuf,AUDIOBUFSIZE);
 }
 
-FRESULT audioplayerLoadFile(char *file, char* readbuffer, uint32_t datasize, uint32_t offset)
+FRESULT audioplayerLoadFile(char *filename, char* readbuffer, uint32_t datasize, uint32_t offset)
 {
     /* loads file, gets buffer FULLY loaded w/ data before calling play
     
@@ -44,27 +44,27 @@ FRESULT audioplayerLoadFile(char *file, char* readbuffer, uint32_t datasize, uin
 
     FRESULT fr;
 
-    uint32_t filesize = get_wavefile_size(&file); // total size of file
-    offset = parse_wavfile(&file); // offset to song data
+    uint32_t filesize = get_wavfile_size(&filename); // total size of file
+    offset = parse_wavfile(&filename); // offset to song data
     datasize = filesize - offset; // total size of data chunk
     /* 
     initial read so that read buffer has something when we go to play
     big note - read_wavefil_data INCREMENTS offset for us. 
     */
-    fr = read_wavfile_data(&file,&readbuffer,offset,AUDIOBUFSIZE);
+    fr = read_wavfile_data(&filename,&readbuffer,offset,AUDIOBUFSIZE);
 
     return fr;
 }
 
-FRESULT audioplayerNextBlock(char *file, char *readbuffer, uint32_t offset, uint16_t numbytes)
+FRESULT audioplayerNextBlock(char *filename, char *readbuffer, uint32_t offset, uint16_t numbytes)
 {
     // wrapper for read_wavefile_data
     // Should this be in an interface?
     // I dunno if this is really that great philosophically but I'm rolling w it
-    FRESULT fr = read_wavfile_data(&file,&readbuffer,offset,numbytes);
+    FRESULT fr = read_wavfile_data(&filename,&readbuffer,offset,numbytes);
     return fr;
 }
-void audioplayerStart(char *file)
+void audioplayerStart()
 {
     //enable timer - this sets everything in motion i.e. the IRQHandler
     TIM_Cmd(TIM3 , ENABLE);
@@ -74,7 +74,7 @@ void audioplayerStart(char *file)
     DAC_DMACmd(DAC_Channel_1 , ENABLE);
 
 }
-void audioplayerStop(char *file)
+void audioplayerStop()
 {
    //enable timer - this sets everything in motion i.e. the IRQHandler
     TIM_Cmd(TIM3 , DISABLE);
@@ -83,5 +83,5 @@ void audioplayerStop(char *file)
     DMA_Cmd(DMA1_Channel3 , DISABLE);
     DAC_DMACmd(DAC_Channel_1 , DISABLE);
     // close audio file
-    f_close(&file);  
+    close_wavfile();  
 }

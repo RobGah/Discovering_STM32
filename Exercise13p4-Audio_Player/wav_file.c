@@ -11,6 +11,7 @@
 
 #ifndef ISMAIN
 #include "ff.h"
+#include "diskio.h"
 #include "xprintf.h"
 #include "wav_file.h"
 #endif
@@ -169,13 +170,13 @@ uint32_t parse_wavfile(char * filename)
         }
             do
         {
-            read(wavfile,(void *)&datachunk.FormatTag,4);
+            f_read(&wavfile,(void *)&datachunk.FormatTag,4,br);
         } while (datachunk.FormatTag != data);
 
         if(datachunk.FormatTag == data)
         {
             xprintf("SubChunk2 ID is DATA\r\n");
-            read(wavfile,(void *)&datachunk.SubchunkSize,4);
+            f_read(&wavfile,(void *)&datachunk.SubchunkSize,4,br);
             xprintf("SubChunk2 Size is: %X.\r\n",datachunk.SubchunkSize);
             retval -= datachunk.SubchunkSize;
             //get a full readout - not recommended.
@@ -199,15 +200,10 @@ uint32_t parse_wavfile(char * filename)
         }
         xprintf("Byte offset from file start to data: %X.\r\n",retval);
         
-        close(wavfile);
+        f_close(&wavfile);
         return(retval);
 }
 
-uint32_t get_wavfile_size(char *filename)
-{
-    parse_wavfile(&filename);
-    return riffheader.ChunkSize;
-}
 
 FRESULT read_wavfile_data(char * filename, uint8_t *readbuffer, uint32_t offset, uint8_t numbytes)
 {
@@ -238,6 +234,19 @@ FRESULT read_wavfile_data(char * filename, uint8_t *readbuffer, uint32_t offset,
         offset+=numbytes; // increment offset?
         return fr;
 }
+
+uint32_t get_wavfile_size(char *filename)
+{
+    parse_wavfile(&filename);
+    return riffheader.ChunkSize;
+}
+
+FRESULT close_wavfile()
+{
+    f_close(&wavfile);
+}  
+
+
 #endif 
 
 /***********************************/
