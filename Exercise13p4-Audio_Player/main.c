@@ -32,6 +32,21 @@ Remarks:
 Setup:
 
 -STM32VL Disco Board + Optional speaker 
+Setup:
+
+ST7735R- Base LCD PCBA is connected to the STM32 "Disco" by way of:
+
+LCD     BluePill    Function
+VCC     5V          Power
+BKL     PA1         Backlight Control
+RESET   PA3         LCD Reset
+RS      PA4         Data/Control Toggle
+MISO    PB14        SlaveOut
+MOSI    PB15        SlaveIn
+SCLK    PB13        Clock for SPI2
+LCD CS  PA5         LCD Select 
+SD_CS   PA6         SD card Select
+GND     GND         Ground
 
 Strategy:
 
@@ -39,7 +54,7 @@ Wrote both a function and a program to generate sine wave data.
 
 For UART Debug, I'm using:
 
-UART    BluePill    BluePill Pin 
+UART    Disco       Disco Pin 
 TXD     RXD         A9
 RXD     TXD         A10
 CTS     CTS         A11
