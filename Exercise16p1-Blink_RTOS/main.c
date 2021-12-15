@@ -17,6 +17,16 @@
 #include "setup_main.h"
 #include "xprintf.h"
 #include "adc.h"
+#include "misc.h"
+
+/****FREERTOS INCLUDES****/
+//#include "FreeRTOSConfig.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "list.h"
+#include "timers.h"
+
 
 /*
 Remarks:
@@ -42,10 +52,6 @@ GND     GND         GND
 */
 
 #define USE_FULL_ASSERT
-#define ADC_MAX_VALUE (2^12)
-
-uint16_t ain;
-
 
 // xprintf() support
 void myputchar(unsigned char c)
@@ -58,48 +64,61 @@ unsigned char mygetchar ()
 }
 
 
-int main()
+static void Thread1(void *arg) 
 {
+    int dir = 0;
+    while (1) 
+    {
+        vTaskDelay (300/ portTICK_RATE_MS);
+        GPIO_WriteBit(GPIOC , GPIO_Pin_9 , dir ? Bit_SET : Bit_RESET);
+        dir = 1 - dir;
+    }
+}
+static void Thread2(void *arg) 
+{
+    int dir = 0;
+    while (1) 
+    {
+        vTaskDelay (500/ portTICK_RATE_MS);
+        GPIO_WriteBit(GPIOC , GPIO_Pin_8 , dir ? Bit_SET : Bit_RESET);
+        dir = 1 - dir;
+    }
+}
+int main(void)
+{
+    // set up interrupt priorities for FreeRTOS !!
+    NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
+    
+    /****initialize hardware****/
     // Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
     {
         while(1);
     }
+    init_GPIO_pin(GPIOC,GPIO_Pin_8,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
+    init_GPIO_pin(GPIOC,GPIO_Pin_9,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
 
-    //setup xprintf - I like these func's better than what the book suggests
-    xdev_in(mygetchar); 
-    xdev_out(myputchar);
-
-    //uart port opened for debugging
-    uart_open(USART1,9600);
-    xprintf("UART is Live.\r\n");
-
-    // start LED
-    init_onboard_led();
-
-    adc_init_w_trig(GPIOA,GPIO_Pin_7,ADC1,ADC_Channel_7, ADC_ExternalTrigConv_T3_TRGO);
-    ADC_SoftwareStartConvCmd(ADC1,ENABLE); // THIS IS THE MISSING PIECE
-
-    //Timer goes off every 1ms 
-    timer_init(TIM3, RCC_APB1Periph_TIM3, 1000000, 1000, TIM_CounterMode_Up);
-
-    // Config output to trigger on an update
-    TIM_SelectOutputTrigger(TIM3 , TIM_TRGOSource_Update);
-    TIM_ITConfig(TIM3 , TIM_IT_Update , ENABLE);
-    TIM_Cmd(TIM3 , ENABLE); // why not
-
-
-    // This kinda sucked to find. Chip dependent. See stm32f10x.h
-    config_NVIC(ADC1_2_IRQn, 3); 
-
-
-    //MAIN LOOP
-    while (1) 
-    {
-        /* NOTHING! */
-    }
-   return(0);
+    // Create tasks
+    xTaskCreate(Thread1 , // Function to execute
+                "Thread 1", // Name
+                128, // Stack size
+                NULL , // Parameter (none)
+                tskIDLE_PRIORITY + 1 , // Scheduling priority
+                NULL // Storage for handle (none)
+                );
+    
+    xTaskCreate(Thread2 , 
+                "Thread 2", 
+                128,
+                NULL , 
+                tskIDLE_PRIORITY + 1 , 
+                NULL
+                );
+    // Start scheduler
+    vTaskStartScheduler();
+    // Schedule never ends
 }
+
 
 #ifdef USE_FULL_ASSERT
 void assert_failed(uint8_t* file , uint32_t line)
@@ -109,25 +128,3 @@ void assert_failed(uint8_t* file , uint32_t line)
     while (1);
 }
 #endif
-
-
-/* weirdly enough this works and ADC1_2_IRQHandler doesn't */
-void ADC1_IRQHandler() 
-{
-// read ADC DR and set LED accordingly
-
-        ain = ADC_GetConversionValue(ADC1);
-        
-        //clear EOC flag
-        //ADC_ClearFlag(ADC1, ADC_FLAG_EOC);
-        
-        xprintf("Current Value is %d\r\n", ain);
-
-        if(ain >= 3800) // arbitrary - input voltage varies w/ pot used.
-        {
-            GPIO_WriteBit(LED_PORT,LED_PIN,Bit_RESET);
-        }
-        else GPIO_WriteBit(LED_PORT,LED_PIN,Bit_SET);
-
-ADC_ClearITPendingBit(ADC1 , ADC_IT_EOC);
-}

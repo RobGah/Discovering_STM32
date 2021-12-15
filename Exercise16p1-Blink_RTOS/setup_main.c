@@ -22,13 +22,13 @@ void Delay(uint32_t nTime)
     while(TimingDelay !=0);
 }
 
-void SysTick_Handler(void)
-{
-    if (TimingDelay != 0x00)
-    {
-        TimingDelay--;
-    }
-}
+// void SysTick_Handler(void)
+// {
+//     if (TimingDelay != 0x00)
+//     {
+//         TimingDelay--;
+//     }
+// }
 
 //initialize onboard LED (sign of life)
 void init_onboard_led(void)
