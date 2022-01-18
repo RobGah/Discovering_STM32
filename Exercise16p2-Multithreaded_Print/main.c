@@ -115,9 +115,9 @@ static void Blink(void *arg)
 }
 int main(void)
 {
-
+    uart_open(USART1,115200);
     putcharMutex = xSemaphoreCreateMutex();
-    
+
     if(putcharMutex != NULL)
     {
     // set up interrupt priorities for FreeRTOS !!

@@ -1,10 +1,16 @@
 #ifndef UART_H
 #define UART_H
 
+int uart_open(USART_TypeDef* USARTx, uint32_t baud);
+int uart_close(USART_TypeDef* USARTx);
+
+
 //////////////////////////////////////////////////////////////////////////////////////
 /********* BELOW ARE DEPRECIATED UNTIL I GET TO CODING UP SOME PREPROCESSOR STATEMENTS 
     TO SELECT BETWEEN BASIC UART AND FLOW-CONTROL UART**********/
 /////////////////////////////////////////////////////////////////////////////////////
+
+
 
 int uart_putc(int c, USART_TypeDef* USARTx);
     /*
