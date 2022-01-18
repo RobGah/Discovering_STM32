@@ -21,12 +21,13 @@
 
 /****FREERTOS INCLUDES****/
 #include "FreeRTOSConfig.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "list.h"
-#include "timers.h"
-#include "semphr.h"
+#include "FreeRTOS_Source/include/FreeRTOS.h"
+#include "FreeRTOS_Source/include/FreeRTOS.h"
+#include "FreeRTOS_Source/include/task.h"
+#include "FreeRTOS_Source/include/queue.h"
+#include "FreeRTOS_Source/include/list.h"
+#include "FREERTOS_Source/include/timers.h"
+#include "FreeRTOS_Source/include/semphr.h"
 
 
 /*
@@ -64,12 +65,12 @@ unsigned char mygetchar ()
     return uart_getc(USART1);
 }
 
-// Mutex for printing
-xSemaphoreHandle putcharMutex = NULL;
-putcharMutex = xSemaphoreCreateMutex();
+//Mutexes and Semaphores
+static SemaphoreHandle_t putcharMutex = NULL;
+
 
 //A little silly, but to make it a thing...
-void mutexputchar(char letter, USART_TypeDef* USARTx)
+static void mutexputchar(char letter, USART_TypeDef* USARTx)
 {
     if(xSemaphoreTake(putcharMutex,(TickType_t)10)==pdTRUE)
         {
@@ -114,6 +115,9 @@ static void Blink(void *arg)
 }
 int main(void)
 {
+
+    putcharMutex = xSemaphoreCreateMutex();
+    
     if(putcharMutex != NULL)
     {
     // set up interrupt priorities for FreeRTOS !!

@@ -65,12 +65,13 @@
 #define configUSE_MUTEXES				1
 #define configQUEUE_REGISTRY_SIZE		0
 #define configGENERATE_RUN_TIME_STATS	0
-#define configCHECK_FOR_STACK_OVERFLOW	1
+#define configCHECK_FOR_STACK_OVERFLOW	0
 #define configUSE_RECURSIVE_MUTEXES		0
 #define configUSE_MALLOC_FAILED_HOOK	0
 #define configUSE_APPLICATION_TASK_TAG	0
 #define configUSE_COUNTING_SEMAPHORES	0
-#define configSUPPORT_DYNAMIC_ALLOCATION		1
+//#define configSUPPORT_DYNAMIC_ALLOCATION 1
+
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0
