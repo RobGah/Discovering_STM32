@@ -79,15 +79,27 @@ static void mutexputchar(char letter, USART_TypeDef* USARTx)
         }
 }
 
+static void mutexputs(char *letter, USART_TypeDef* USARTx)
+{
+    if(xSemaphoreTake(putcharMutex,(TickType_t)10)==pdTRUE)
+        {
+            uart_puts(letter,USARTx);
+            xSemaphoreGive(putcharMutex);
+        }
+}
+
+
 static void Thread1(void *arg) 
 {
     char thread1str[] = "Thread 1's string is printing!\r\n";
     while (1) 
     {        
-        for(int i = 0; i<strlen(thread1str);i++) 
-        {
-            mutexputchar(thread1str[i],USART1);
-        }    
+        mutexputs(thread1str,USART1);
+        vTaskDelay (10/ portTICK_RATE_MS); // don't hog the processor
+        // for(int i = 0; i<strlen(thread1str);i++) 
+        // {
+        //     mutexputchar(thread1str[i],USART1);
+        // }    
     }
 }
 
@@ -96,10 +108,13 @@ static void Thread2(void *arg)
     char thread2str[] = "Thread 2's string is printing!\r\n";
     while (1) 
     {
-        for(int i = 0; i<strlen(thread2str);i++) 
-        {
-            mutexputchar(thread2str[i],USART1);
-        }  
+        mutexputs(thread2str,USART1);
+        vTaskDelay (10/ portTICK_RATE_MS); // don't hog the processor
+
+        // for(int i = 0; i<strlen(thread2str);i++) 
+        // {
+        //     mutexputchar(thread2str[i],USART1);
+        // }  
     }
 }
 
@@ -115,7 +130,7 @@ static void Blink(void *arg)
 }
 int main(void)
 {
-    uart_open(USART1,115200);
+    uart_open(USART1,9600);
     putcharMutex = xSemaphoreCreateMutex();
 
     if(putcharMutex != NULL)
