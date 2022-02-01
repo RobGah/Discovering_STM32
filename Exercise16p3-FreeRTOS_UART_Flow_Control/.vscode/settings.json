@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "lcd7735r.h": "c",
+        "setup_main.h": "c"
+    }
+}
