@@ -128,15 +128,10 @@ static void Blink(void *arg)
 int main(void)
 {
     //setup xprintf - I like these func's better than what the book suggests
-    xdev_in(mygetchar); 
-    xdev_out(myputchar);
+    //xfunc_input= mygetchar; 
+    //xfunc_output= myputchar;
 
-    uart_open(USART1,115200);
-    // xprintf("Enter LED on/off to control the state of the built in LED at pin 9 on the Discovery board \r\n");
-
-    serialMutex = xSemaphoreCreateMutex();
-
-    // set up interrupt priorities for FreeRTOS !!
+       // set up interrupt priorities for FreeRTOS !!
     NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
     
     /****initialize hardware****/
@@ -146,13 +141,22 @@ int main(void)
         while(1);
     }
 
+    //LEDs
     init_GPIO_pin(GPIOC,GPIO_Pin_8,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
     init_GPIO_pin(GPIOC,GPIO_Pin_9,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
+
+
+    uart_open(USART1,115200);
+    puts_rtos("Enter LED on/off to control the state");
+    puts_rtos("of the built in LED at pin 9");
+    puts_rtos("on the Discovery board \r\n");
+
+    serialMutex = xSemaphoreCreateMutex();
 
     // Create tasks
     xTaskCreate(Thread1 , // Function to execute
                 "Thread 1", // Name
-                128, // Stack size
+                1024, // Stack size
                 NULL, // Parameter (none)
                 tskIDLE_PRIORITY + 1 , // Scheduling priority
                 NULL // Storage for handle (none)
@@ -160,7 +164,7 @@ int main(void)
     
     xTaskCreate(Thread2 , 
                 "Thread 2", 
-                128,
+                1024,
                 NULL, 
                 tskIDLE_PRIORITY + 1 , 
                 NULL
@@ -168,7 +172,7 @@ int main(void)
 
     xTaskCreate(Thread3 , 
             "Thread 3", 
-            128,
+            1024,
             NULL, 
             tskIDLE_PRIORITY + 1 , 
             NULL
@@ -176,7 +180,7 @@ int main(void)
 
     xTaskCreate(Blink , 
             "Blink", 
-            128,
+            1024,
             NULL , 
             tskIDLE_PRIORITY + 1 , 
             NULL

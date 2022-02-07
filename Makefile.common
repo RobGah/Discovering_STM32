@@ -75,6 +75,9 @@ clean:
 
 debug: $(ELF)
 	arm-none-eabi-gdb $(ELF)
+	
+flash: $(ELF)
+	openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program $(ELF) verify reset exit"
 
 
 # pull in dependencies

@@ -9,7 +9,7 @@ controlled AND each exercise has a folder, it feels cleaner.
 
 */
 
-#define QUEUE_SIZE 80
+#define QUEUE_SIZE 16
 #define HIGH_WATER (QUEUE_SIZE-6) 
 
 int  uart_open (USART_TypeDef * USARTx, uint32_t baud);
@@ -24,15 +24,17 @@ int uart_close(USART_TypeDef * USARTx);
     -Disable the USARTx on STM32
     */
 
-int putchar_rtos(uint8_t c);
+void putchar_rtos(unsigned char c);
 /*
 Puts char into FreeRTOS Tx queue
 */
 
-char getchar_rtos(void);
+unsigned char getchar_rtos(void);
 /*
 Returns char from FreeRTOS Rx queue
 */
 
+int puts_rtos(char *array);
+/* function that calls putchar_rtos until full array is read into the Tx queue.*/
 
 #endif

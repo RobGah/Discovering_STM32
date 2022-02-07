@@ -19,7 +19,7 @@ Main project folder contains makefile.common, the STM32 Standard Peripheral Libr
 
 Minor edits to the author provided makefile and example code in the book (e.g. user LED is PC13 vs PA8) enable the use of the Blue Pill in lieu of the STM32VL discovery board. Highly recommended as I had quite a bit of trouble with setting up the STM32VL Discovery Board and its STLink v1 debugger with the open source STLink recommended by the author. 
 
-*EDIT*: Late in the game I got the Discovery board to work with the STLink open-source software(https://github.com/stlink-org/stlink). I'm using an external STLink V2 dongle (They are ubiquitous and easily found online).
+*EDIT*: Late in the game I got the Discovery board to work with the STLink open-source software(https://github.com/stlink-org/stlink). I'm using an external STLink V2 dongle (They are ubiquitous and easily found online). I've tried dearly to try to get the onboard Disco board STLINK to work to absolutely no avail. I think its an ~advanced~ driver incompatiblity issue.
 
 Wherever I've used the Disco board in an exercise, I will make a note of it in main.c for that exercise. (Most notably, see the DAC exercises).
 
@@ -33,3 +33,8 @@ To program a Disco board w/ the STLink Dongle:
 
 N.B. that because 2 different boards were used that particulars when building may arise depending on the target board.
 
+Also late in the game but very much worth mentioning. This guy 
+https://www.youtube.com/watch?v=PxQw5_7yI8Q&t=720s (part 1 of 3 linked here)
+gives an EXCELLENT toolchain overview for the STM32. This project makes absolutely no use of STM32CubeMX (which looks like an AWESOME way to config the peripherals automatically vs doing it manually in this project suite) but every other tool in his chain is VERY much applicable and in use in one way or another. 
+
+Debugging with openocd is massively advantageous over gdb and the ability to do it in VSCode w/ the Cortex Debug extension is very helpful.

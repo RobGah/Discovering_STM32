@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <string.h>
  
 /****FREERTOS INCLUDES****/
 #include "FreeRTOSConfig.h"
@@ -24,7 +25,7 @@
 /****Header****/
 #include "uartfc-rtos.h"
 
-static int RxOverflow = 0;
+static volatile int RxOverflow = 0;
 
 // TxPrimed is used to signal that Tx send buffer needs to be primed
 // to commence sending -- it is cleared by the IRQ, set by uart_write
@@ -147,7 +148,7 @@ int uart_close(USART_TypeDef * USARTx)
 
 }
 
-char getchar_rtos(void)
+unsigned char getchar_rtos(void)
 {
   // 0xFF will be returned if the RX queue is empty
   // getchar shouldn't be called then OR 0xFF can be
@@ -168,7 +169,7 @@ char getchar_rtos(void)
   
 }
 
-int putchar_rtos(uint8_t c)
+void putchar_rtos(unsigned char c)
 {
   // if we are successful in queueing the data
   if(xQueueSend(UART1_TXq , c, (TickType_t)10) == pdTRUE)
@@ -179,6 +180,18 @@ int putchar_rtos(uint8_t c)
       USART_ITConfig(USART1 , USART_IT_TXE , ENABLE);
     }
   }
+}
+
+int puts_rtos(char *array)
+{
+    for(int i = 0; i<strlen(array);++i)
+        {
+            putchar_rtos(array[i]);
+        }
+    //auto carriage + newline after string
+    //putchar_rtos('\r'); 
+    //putchar_rtos('\n'); 
+    return(0);
 }
 
 

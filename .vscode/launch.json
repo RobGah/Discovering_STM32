@@ -1,29 +1,20 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "gcc.exe - Build and debug active file",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "miDebuggerPath": "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin\\gdb.exe",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "preLaunchTask": "C/C++: gcc.exe build active file"
-        }
+    {
+        "name": "Cortex Debug",
+        "cwd": "${workspaceRoot}",
+        "executable": "./Exercise16p3-FreeRTOS_UART_Flow_Control/Exercise16p3-FreeRTOS_UART_Flow_Control.elf",
+        "request": "launch",
+        "type": "cortex-debug",
+        //"showDevDebugOutput": false,
+        "servertype": "openocd",
+        "device": "STM32F100RBT6B", //STM32F103C8T6 is bluepill
+        "configFiles": [
+            "interface/stlink.cfg",
+            "target/stm32f1x.cfg"
+        ],
+        "svdFile": "./STM32F1x.svd"
+    }
     ]
 }

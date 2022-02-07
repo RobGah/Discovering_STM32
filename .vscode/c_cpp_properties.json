@@ -1,21 +1,30 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "STM32 F1x",
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "USE_STDPERIPH_DRIVER",
+                "STM32F10X_MD_VL" // Could also be STM32F10X_MD if bluepill is used!
+            ],
+            "intelliSenseMode": "gcc-arm",
+            "compilerPath": "${env:ARMGCC_DIR}/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mcpu=cortex-m3",
+                "-mthumb"
             ],
             "windowsSdkVersion": "8.1",
             "cStandard": "c11",
-            "cppStandard": "gnu++14",
+            "cppStandard": "c++17",
             "includePath": [
-                "${default}",
-                "${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x",
-                "${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport",
-                "${workspaceFolder}/Library",
-                "${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdPeriph_Driver/inc"
+                //"${default}",
+                //"${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x",
+                //"${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/CoreSupport",
+                //"${workspaceFolder}/Library",
+                //"${workspaceFolder}/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdPeriph_Driver/inc"
+                "${workspaceFolder}/**"
             ]
         }
     ],
