@@ -41,9 +41,10 @@ vpath %.c $(TEMPLATEROOT)/Library
 
 #  Processor specific
 
-PTYPE = STM32F10X_MD_VL 
-#PTYPE = STM32F10X_MD #use this for blue pill
-LDSCRIPT = $(TEMPLATEROOT)/stm32f100.ld
+#PTYPE = STM32F10X_MD_VL 
+PTYPE = STM32F10X_MD #use this for blue pill
+#LDSCRIPT = $(TEMPLATEROOT)/stm32f100.ld
+LDSCRIPT = $(TEMPLATEROOT)/stm32f103.ld
 STARTUP= startup_stm32f10x.o system_stm32f10x.o 
 
 # Compilation Flags

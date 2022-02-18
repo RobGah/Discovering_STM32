@@ -7,7 +7,7 @@
                 "UNICODE",
                 "_UNICODE",
                 "USE_STDPERIPH_DRIVER",
-                "STM32F10X_MD_VL" // Could also be STM32F10X_MD if bluepill is used!
+                "STM32F10X_MD" // STM32f10x_MD_VL if disco, STM32F10X_MD if bluepill 
             ],
             "intelliSenseMode": "gcc-arm",
             "compilerPath": "${env:ARMGCC_DIR}/arm-none-eabi-gcc.exe",

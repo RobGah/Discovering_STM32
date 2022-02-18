@@ -6,9 +6,9 @@
 #include <stm32f10x_exti.h>
 #include <stm32f10x_dac.h>
 #include <stm32f10x_adc.h>
-#include <stdint.h>
+//#include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <stm32f10x_tim.h>
 #include "interrupts.h"
 #include "uartfc-rtos.h"
@@ -69,12 +69,13 @@ GND     GND         GND
 // xprintf() support
 void myputchar(unsigned char c)
 {
-    putchar_rtos(c);
+    uart_putc_rtos(c);
 }
 unsigned char mygetchar()
 {
-    return getchar_rtos();
+    return uart_getc_rtos();
 }
+
 
 // Mutexes and Semaphores
 static SemaphoreHandle_t serialMutex = NULL;
@@ -105,9 +106,15 @@ static void Thread2(void *arg)
 
 static void Thread3(void *arg) 
 {
+    char hellostring[] = "hello!\r\n";
     /* Thread 3 prints to the console*/
     while (1) 
     {
+        for(int i =0; i<strlen(hellostring);i++)
+        {
+            uart_putc_rtos(hellostring[i]);
+        }
+
         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 }
@@ -119,7 +126,7 @@ static void Blink(void *arg)
     while (1) 
     {
         vTaskDelay (500/ portTICK_RATE_MS);
-        GPIO_WriteBit(GPIOC , GPIO_Pin_8 , dir ? Bit_SET : Bit_RESET);
+        GPIO_WriteBit(GPIOC , GPIO_Pin_13 , dir ? Bit_SET : Bit_RESET);
         dir = 1 - dir;
     }
 }
@@ -127,52 +134,49 @@ static void Blink(void *arg)
 // Main 
 int main(void)
 {
-    //setup xprintf - I like these func's better than what the book suggests
-    //xfunc_input= mygetchar; 
-    //xfunc_output= myputchar;
+    /****initialize hardware****/
+    volatile int uart_status = uart_open(1,115200, 0);
 
-       // set up interrupt priorities for FreeRTOS !!
+    // set up interrupt priorities for FreeRTOS
     NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
     
-    /****initialize hardware****/
-    // Configure SysTick Timer
+    //Configure SysTick Timer
     if(SysTick_Config(SystemCoreClock/1000))
     {
         while(1);
     }
 
-    //LEDs
-    init_GPIO_pin(GPIOC,GPIO_Pin_8,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
-    init_GPIO_pin(GPIOC,GPIO_Pin_9,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
+    // LEDs
+    //init_GPIO_pin(GPIOC,GPIO_Pin_8,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
+    //init_GPIO_pin(GPIOC,GPIO_Pin_9,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
+    init_GPIO_pin(GPIOC,GPIO_Pin_13,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);
 
+    // USART     
+    
 
-    uart_open(USART1,115200);
-    puts_rtos("Enter LED on/off to control the state");
-    puts_rtos("of the built in LED at pin 9");
-    puts_rtos("on the Discovery board \r\n");
-
-    serialMutex = xSemaphoreCreateMutex();
+    //create mutex
+    //serialMutex = xSemaphoreCreateMutex();
 
     // Create tasks
-    xTaskCreate(Thread1 , // Function to execute
-                "Thread 1", // Name
-                1024, // Stack size
-                NULL, // Parameter (none)
-                tskIDLE_PRIORITY + 1 , // Scheduling priority
-                NULL // Storage for handle (none)
-                );
+    // xTaskCreate(Thread1 , // Function to execute
+    //             "Thread 1", // Name
+    //             128, // Stack size
+    //             NULL, // Parameter (none)
+    //             tskIDLE_PRIORITY + 1 , // Scheduling priority
+    //             NULL // Storage for handle (none)
+    //             );
     
-    xTaskCreate(Thread2 , 
-                "Thread 2", 
-                1024,
-                NULL, 
-                tskIDLE_PRIORITY + 1 , 
-                NULL
-                );
+    // xTaskCreate(Thread2 , 
+    //             "Thread 2", 
+    //             128,
+    //             NULL, 
+    //             tskIDLE_PRIORITY + 1 , 
+    //             NULL
+    //             );
 
     xTaskCreate(Thread3 , 
             "Thread 3", 
-            1024,
+            128,
             NULL, 
             tskIDLE_PRIORITY + 1 , 
             NULL
@@ -180,7 +184,7 @@ int main(void)
 
     xTaskCreate(Blink , 
             "Blink", 
-            1024,
+            128,
             NULL , 
             tskIDLE_PRIORITY + 1 , 
             NULL

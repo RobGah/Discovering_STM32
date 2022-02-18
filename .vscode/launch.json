@@ -9,12 +9,12 @@
         "type": "cortex-debug",
         //"showDevDebugOutput": false,
         "servertype": "openocd",
-        "device": "STM32F100RBT6B", //STM32F103C8T6 is bluepill
+        "device": "STM32F103C8T6", //STM32F103C8T6 is bluepill, STM32F100RBT6B is disco
         "configFiles": [
             "interface/stlink.cfg",
             "target/stm32f1x.cfg"
         ],
-        "svdFile": "./STM32F1x.svd"
+        "svdFile": "stm32f103.svd"
     }
     ]
 }

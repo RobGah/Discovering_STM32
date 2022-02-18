@@ -1,16 +1,10 @@
-/****STM32 Specifics****/
 #include <stm32f10x.h>
 #include <stm32f10x_rcc.h>
 #include <stm32f10x_gpio.h>
 #include <stm32f10x_usart.h>
-
-/****Standard lib stuff****/
 #include <misc.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <string.h>
- 
+
+
 /****FREERTOS INCLUDES****/
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS_Source/include/FreeRTOS.h"
@@ -21,38 +15,25 @@
 #include "FREERTOS_Source/include/timers.h"
 #include "FreeRTOS_Source/include/semphr.h"
 
-
-/****Header****/
+/****HEADER****/
 #include "uartfc-rtos.h"
 
-static volatile int RxOverflow = 0;
+int RxOverflow = 0;
 
 // TxPrimed is used to signal that Tx send buffer needs to be primed
 // to commence sending -- it is cleared by the IRQ, set by uart_write
-// volatile as its operated on by both the ISR and possibly multiple threads
-static volatile int TxPrimed = 0;
 
+static int TxPrimed = 0;
 
-/*** PUBLIC FUNCTIONS***/
+QueueHandle_t UART1_TXq, UART1_RXq;
 
-//instantiate 2 FREERTOS Queues w/ global scope.
-QueueHandle_t UART1_TXq, UART1_RXq; 
-
-int  uart_open (USART_TypeDef * USARTx, uint32_t baud)
+int uart_open (uint8_t uart, uint32_t baud, uint32_t flags)
 {
-
-  // create our queues
-
-  UART1_TXq = xQueueCreate(QUEUE_SIZE,sizeof(char));
-  UART1_RXq = xQueueCreate(QUEUE_SIZE,sizeof(char));
-
-  //n.b. pin assignment is the same for the Blue Pill. 
-
   USART_InitTypeDef USART_InitStructure; 
   GPIO_InitTypeDef GPIO_InitStructure; 
   NVIC_InitTypeDef NVIC_InitStructure;
 
-  if (USARTx == USART1) {
+  if (uart == 1) {
     
     // get things to a known state
 
@@ -97,17 +78,25 @@ int  uart_open (USART_TypeDef * USARTx, uint32_t baud)
     // Configure NVIC
 
     /* Configure the NVIC Preemption Priority Bits */  
-
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+    /*This should be PriorityGroup_4 to be congruent w/ FreeRTOS*/
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
   
     /* Enable the USART1 Interrupt */
 
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    /* ***IMPORTANT***
+    This must be >5 (RTOS preemption level) or 
+    you you get an error. This took forever to debug
+    The book states this but its difficult to wrap your 
+    head around at first. I learned the hard way*/
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6; 
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    // Create Queues
+    UART1_RXq = xQueueCreate(QUEUE_SIZE,sizeof(char));
+    UART1_TXq = xQueueCreate(QUEUE_SIZE,sizeof(char));
 
     // Configure the UART
 
@@ -138,114 +127,53 @@ int  uart_open (USART_TypeDef * USARTx, uint32_t baud)
 }
 
 
-int uart_close(USART_TypeDef * USARTx)
+int uart_close(uint8_t uart)
 {
-  //nothing here?
-  if(USARTx==USART1) //only handle UART1 as with uart_open
-  {
-    USART_Cmd(USART1,DISABLE);
-  }
 
 }
 
-unsigned char getchar_rtos(void)
+int uart_putc_rtos(int c)
 {
-  // 0xFF will be returned if the RX queue is empty
-  // getchar shouldn't be called then OR 0xFF can be
-  // checked for by the calling routine
-  if(uxQueueMessagesWaiting(UART1_RXq) == 0)
-  {
-    return 0xFF;
-  }
-  uint8_t data; 
-  // Don't block for more than 10 ticks
-  if(xQueueReceive(UART1_RXq , &data , (TickType_t) 10) != pdTRUE);
-  // If the queue has fallen below high water mark , enable nRTS
-  if (uxQueueMessagesWaiting(UART1_RXq) <= HIGH_WATER)
-  {
-    GPIO_WriteBit(GPIOA , GPIO_Pin_12 , 0);
-  }
-  return data;
-  
+    xQueueSend(UART1_TXq , &c, portMAX_DELAY);
+    // kick the transmitter interrupt
+    USART_ITConfig(USART1 , USART_IT_TXE , ENABLE);
+    return 0;
 }
 
-void putchar_rtos(unsigned char c)
+int uart_getc_rtos()
 {
-  // if we are successful in queueing the data
-  if(xQueueSend(UART1_TXq , c, (TickType_t)10) == pdTRUE)
-  {
-    if (! TxPrimed) 
-    {
-      TxPrimed = 1;
-      USART_ITConfig(USART1 , USART_IT_TXE , ENABLE);
-    }
-  }
+    int8_t buf;
+    xQueueReceive(UART1_RXq , &buf , portMAX_DELAY);
+    return buf;
 }
-
-int puts_rtos(char *array)
-{
-    for(int i = 0; i<strlen(array);++i)
-        {
-            putchar_rtos(array[i]);
-        }
-    //auto carriage + newline after string
-    //putchar_rtos('\r'); 
-    //putchar_rtos('\n'); 
-    return(0);
-}
-
 
 void USART1_IRQHandler(void)
 {
   portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
   
-  if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+  if(USART_GetITStatus(USART1 , USART_IT_RXNE) != RESET)
+  {
+    uint8_t data;
+    
+    USART_ClearITPendingBit(USART1 , USART_IT_RXNE);
+    
+    data = USART_ReceiveData(USART1) & 0xff;
+    if (xQueueSendFromISR(UART1_RXq , &data,!&xHigherPriorityTaskWoken) != pdTRUE)
+      RxOverflow = 1;
+  }
+  if(USART_GetITStatus(USART1 , USART_IT_TXE) != RESET) 
+  {
+    uint8_t data;
+    if (xQueueReceiveFromISR(UART1_TXq , &data,!&xHigherPriorityTaskWoken) == pdTRUE)
     {
-      
-      uint8_t  data;
-
-      // clear the interrupt
-
-      USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-
-      // buffer the data (or toss it if there's no room) 
-      // Flow control is supposed to prevent this
-
-      data = USART_ReceiveData(USART1) & 0xff; //get Rec'd data and all 1's mask
-
-      //if we can't enqueue our rec'd byte of data into the recieve register
-      if (xQueueSendFromISR(UART1_RXq,&data,&xHigherPriorityTaskWoken)==pdTRUE)
-	      {
-        RxOverflow = 1; //set overflow flag
-        }
-      // If queue is above high water mark, disable nRTS
-
-      if (uxQueueMessagesWaiting(UART1_RXq) > HIGH_WATER)
-      {
-	      GPIO_WriteBit(GPIOA, GPIO_Pin_12, 1);   //tells usart to stop sending
-      }
+      USART_SendData(USART1 , data);
     }
-  
-  if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
-    {   
-      /* Write one byte to the transmit data register */
-
-      uint8_t data;
-
-      //grab a byte from the tx register
-      if (xQueueReceiveFromISR(UART1_TXq, &data, &xHigherPriorityTaskWoken)==pdTRUE) 
-	    {
-	      USART_SendData(USART1, data); //send it!
-	    }
-      else
-	    {
-	      // if we have nothing to send, disable the interrupt
-	      // and wait for a kick
-	      USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
-	      TxPrimed = 0;
-	    }
+    else 
+    {
+      // turn off interrupt
+      USART_ITConfig(USART1 , USART_IT_TXE , DISABLE);
     }
-    // Cause a scheduling operation if necessary
-    portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+  }
+  // Cause a scheduling operation if necessary
+  portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 }
-
